@@ -14,6 +14,17 @@ description: Boundary-first workflow for multi-repo coding, review, debugging, a
 
 Start by identifying the owner boundary, then map contract, security, state, observability, and validation requirements before making changes.
 
+## Workflow Stages
+
+```text
+1. Classify    → What kind of change is this?
+2. Decide      → How much ceremony? (D0-D3)
+3. Plan        → Write implementation plan (D1+)
+4. Execute     → Make changes, guided by adapter
+5. Verify      → Run mechanical verification at matched depth
+6. Close out   → Structured summary with evidence
+```
+
 Read [constitution.md](./references/constitution.md) first.
 
 ## Mandatory Preflight

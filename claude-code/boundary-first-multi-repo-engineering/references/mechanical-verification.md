@@ -144,6 +144,35 @@ Once gates exist, the rule is simple: if the repo has a gate, use it. Do not sto
 - **"The build succeeded"** — a build verifies compilation, not correctness. Many contract, auth, and data-integrity failures build successfully.
 - **"I'll check it in staging"** — staging catches deployment issues, not contract drift. By the time you reach staging, the window for cheap fixes is gone.
 
+## Verification Failure Triage
+
+When mechanical verification produces failures, do not fix them randomly. Use structured triage.
+
+### Step 1: Run the full suite
+
+Run the strongest available gate or test suite. Collect all failures, not just the first one.
+
+### Step 2: Group failures by root cause
+
+Classify each failure into one of these categories:
+
+- **Invariant failures** — architecture guard, import boundary, barrel convention, encoding. Fix these first because they often cause cascading failures in other groups.
+- **Contract failures** — request/response shape mismatch, schema drift, auth/signature format mismatch. Fix these second because they affect cross-boundary correctness.
+- **Security failures** — secret exposure, auth downgrade, permission expansion without justification. Fix these with high priority regardless of group order.
+- **Regression failures** — existing behavior changed unintentionally. Fix these after invariant and contract groups are stable.
+
+### Step 3: Fix by group, verify per group
+
+Fix one group at a time. After fixing each group, run the relevant subset of tests to confirm the group is resolved before moving to the next.
+
+### Step 4: Run the full suite again
+
+After all groups are resolved, run the full gate or test suite one final time. Do not claim GT until the full suite passes.
+
+### Why this matters
+
+Random fixing leads to oscillation: fixing one test breaks another, which breaks a third. Group-based triage fixes the foundation first (invariants), then the contracts, then the symptoms. This converges faster and wastes fewer tokens.
+
 ## Connection To This Workflow
 
 Mechanical verification is not a nice-to-have in this workflow. It is load-bearing.

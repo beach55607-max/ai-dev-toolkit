@@ -14,6 +14,17 @@
 
 If local rules conflict with this workflow, follow local rules and explain the conflict.
 
+## Workflow Stages
+
+```text
+1. Classify    → What kind of change is this?
+2. Decide      → How much ceremony? (D0-D3)
+3. Plan        → Write implementation plan (D1+)
+4. Execute     → Make changes, guided by adapter
+5. Verify      → Run mechanical verification at matched depth
+6. Close out   → Structured summary with evidence
+```
+
 ## Step 0: Decision Gate
 
 Decision Gate decides **how much ceremony is required**. Preflight (Step 1) decides **what risks and validations apply**.

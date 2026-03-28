@@ -1,0 +1,7 @@
+interface:
+  display_name: "Boundary-First Engineering"
+  short_description: "Boundary-first multi-repo coding workflow"
+  default_prompt: "Use $boundary-first-multi-repo-engineering to identify owner boundaries, contract risk, and validation depth before coding."
+
+policy:
+  allow_implicit_invocation: true

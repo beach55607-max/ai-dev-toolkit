@@ -42,6 +42,50 @@ Community-safe Codex skill for multi-repo engineering work.
 
 這套流程的重點不是讓回答變長，而是讓你少踩高成本的坑。
 
+### 實際案例
+
+#### 案例 1：你以為只是前端 payload 小調整
+
+情境：前端想把送去後端的 request payload 多加一個欄位，或把某個欄位從 string 改成 array。
+
+很多 agent 看到這種需求，第一反應會是直接去改前端 form、mapper、API client，然後跑一下前端 test 就結束。
+
+這個 skill 會先提醒你：
+
+- 真正的 owner 很可能不是 frontend，而是 backend route 或 shared contract
+- 這不是單純 UI 變更，而是 contract 變更
+- 要一起看 producer 跟 consumer
+- validation 不能只停在 caller-side test
+
+換句話說，它會把「看起來只是改一個欄位」的任務，重新框成一個有邊界的 engineering task。
+
+#### 案例 2：你以為只是 extension 多一個權限
+
+情境：browser extension 需要新加一個 `host_permissions`，或者 background message routing 要多一條分支。
+
+沒有 preflight 的情況下，agent 很容易只改 `manifest.json` 或 background script，然後覺得 build 過了就沒事。
+
+這個 skill 會先檢查：
+
+- 這是不是 permission surface
+- 會不會影響 content script、background、storage schema、message passing
+- 是否需要 runtime smoke check，而不是只跑 unit test
+
+這種情況最有價值的地方在於，它會逼 agent 承認「這不是單一檔案改動」，而是 runtime boundary 變更。
+
+#### 案例 3：你以為只是 admin 工具多一個 bulk action
+
+情境：admin console 或 automation flow 需要新增一個批次同步、批次更新、或 review/promote 動作。
+
+一般 agent 常見的做法是先把 UI 按鈕和 API call 接上，但忽略：
+
+- 這是不是 durable write
+- 有沒有 rollback 策略
+- schema 或 review state 會不會被影響
+- 驗證是不是要拉高到 integration / gate level
+
+這個 skill 在這種任務上的價值，不是讓 code 寫更快，而是避免把「高風險變更」偽裝成「一般 CRUD 修改」。
+
 ### 這個 repo 裡有什麼
 
 實際的 skill 放在：
@@ -144,6 +188,50 @@ The skill guides Codex through a boundary-first workflow:
 7. Choose the right validation depth instead of stopping at lint alone.
 
 The goal is not to make answers longer. The goal is to reduce high-cost mistakes.
+
+### Practical Scenarios
+
+#### Scenario 1: It looks like a small frontend payload change
+
+Situation: a frontend flow needs one extra request field, or a field changes from string to array.
+
+Many agents will immediately update the form, the mapper, and the API client, then stop after a frontend test passes.
+
+This skill pushes a different line of thinking:
+
+- the true owner may be the backend route or shared contract, not the frontend
+- this is not just a UI change, it is a contract change
+- producer and consumer both need inspection
+- validation should not stop at caller-side tests
+
+In other words, it reframes “just one field change” into a bounded engineering task.
+
+#### Scenario 2: It looks like just one more extension permission
+
+Situation: a browser extension needs a new `host_permissions` entry, or the background message routing needs one more branch.
+
+Without preflight, an agent may only update `manifest.json` or the background script and assume a successful build is enough.
+
+This skill first checks:
+
+- whether this is a permission surface
+- whether it affects content scripts, background logic, storage schema, or message passing
+- whether runtime smoke checks are needed instead of only unit tests
+
+The value here is that it forces the agent to recognize a runtime boundary change, not just a single-file edit.
+
+#### Scenario 3: It looks like just one more admin bulk action
+
+Situation: an admin console or automation flow needs a new bulk sync, bulk update, or review/promote action.
+
+A common agent mistake is to wire up the button and API call but skip the harder questions:
+
+- is this a durable write
+- what is the rollback path
+- does it affect schema or review-state meaning
+- should validation move up to integration or gate level
+
+In this kind of task, the value of the skill is not faster code generation. It is preventing a high-risk change from being treated like routine CRUD work.
 
 ### What Is In This Repository
 

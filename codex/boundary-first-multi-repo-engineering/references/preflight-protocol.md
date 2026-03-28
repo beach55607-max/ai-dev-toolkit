@@ -17,6 +17,15 @@ Classify the task into one or more:
 
 If more than one applies, let the highest-risk class drive validation depth.
 
+If the task touches auth, schema, permissions, destructive writes, or cross-boundary contracts, write down:
+
+- current assumption
+- owner
+- rollback stance
+- validation plan
+
+Do this before editing.
+
 ## 2. Owner And Boundary
 
 Determine:
@@ -97,6 +106,7 @@ Pause and escalate or explicitly confirm assumptions when the task includes:
 
 - auth or signature changes
 - destructive write flows
+- file deletes, broad moves, or overwrite-heavy rewrites without explicit request and rollback
 - schema migrations
 - permission changes
 - new host access

@@ -27,6 +27,8 @@ Before planning or editing, complete this preflight internally:
 
 Read [preflight-protocol.md](./references/preflight-protocol.md) for the detailed sequence.
 
+For high-risk changes such as auth, schema, destructive writes, permissions, or cross-boundary contract work, document the current assumption, owner, rollback stance, and validation plan before editing.
+
 ## Adapter Selection
 
 After preflight, load the narrowest adapter that matches the owner surface.
@@ -46,10 +48,14 @@ Treat repeated no-match cases as a signal to create a new adapter later, not as 
 ## Core Non-Negotiables
 
 - Put boundaries before implementation.
+- Treat repo-local `AGENTS.md`, task specs, and guardrails as higher authority than this skill.
+- If source files, local rules, or the nearest tests were not read, do not assume implementation details.
 - Treat auth, routes, schemas, env bindings, storage keys, permissions, and message formats as protected surfaces.
+- Do not delete, move, rename, or broadly overwrite user files just to make the task easier.
 - Keep default logs lean and operational; gate noisy diagnostics behind explicit debug-only paths.
 - Prefer the strongest repo-defined verification path over shallow spot checks.
 - Do not pretend caller-side validation is enough when a producer or shared contract also changes.
+- Treat durable state changes as incomplete until rollback, fallback, or blast-radius stance is explicit.
 
 For deeper guidance, read:
 
@@ -67,5 +73,15 @@ State clearly:
 - contract, auth, schema, storage, or permission surfaces touched
 - validation run, skipped, or blocked
 - rollback or compatibility risks that remain
+
+Use this template when helpful:
+
+- Owner:
+- Consumer:
+- Touched surfaces:
+- Validation run:
+- Validation skipped or blocked:
+- Rollback or compatibility risk:
+- Residual unknowns:
 
 If the task touches a stop-condition surface and executable verification is unavailable, call that out explicitly instead of treating the skill alone as sufficient evidence.

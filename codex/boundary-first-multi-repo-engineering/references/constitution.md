@@ -31,6 +31,8 @@ Before editing, identify:
 
 Do not start implementation while the owner boundary is still implicit.
 
+Do not guess implementation details from filenames, naming patterns, or memory alone when the local source, rules, or nearest tests are available to read.
+
 ## Protected Surfaces
 
 Treat the following as design-time boundaries:
@@ -42,6 +44,8 @@ Treat the following as design-time boundaries:
 - storage keys and durable writes
 - permissions, host access, or message channels
 - observability fields that downstream systems rely on
+
+Treat file deletes, broad moves, rename-heavy cleanup, and overwrite-heavy rewrites as protected surfaces too when they change user-owned files or repo structure.
 
 ## Finish Criteria
 

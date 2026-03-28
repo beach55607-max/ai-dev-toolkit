@@ -9,6 +9,7 @@ Use this reference after the owner path is clear.
 3. Run the stronger build, package, gate, or integration path when the repo defines one.
 
 Do not stop at unit tests alone when the affected system owns auth, persistence, schema, permissions, or shared contracts.
+If a shared contract changes, one-side-only validation is partial evidence, not a pass.
 
 ## Validation By Adapter
 

@@ -22,6 +22,8 @@ Other platform-specific editions can live alongside it later.
 - 先判斷這次變更會不會碰到 durable state、rollback、observability
 - 最後才決定要不要改，以及該跑多深的 validation
 
+它也把 repo-local `AGENTS.md` 視為高優先規則，並避免 agent 因為圖方便就自己刪檔、搬檔或大範圍覆寫。
+
 你可以把它理解成一個先釐清方向與邊界的起手式。不是一上來就寫 code，而是先把方向、邊界和風險看清楚。
 
 ### 適合誰
@@ -168,6 +170,8 @@ This skill encourages a more deliberate engineering starting point:
 - inspect contract and security surfaces before editing
 - think about durable state, rollback, and observability early
 - choose validation depth based on risk, not convenience
+
+It also treats repo-local `AGENTS.md` as higher authority and avoids letting the agent delete, move, or broadly overwrite files just to simplify the task.
 
 In short: do not start with code. Start with boundaries.
 

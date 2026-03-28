@@ -2,8 +2,10 @@
 
 Community-safe Codex skill for multi-repo engineering work.
 
-This repository currently packages the Codex edition of the skill.
-Other platform-specific editions can live alongside it later.
+This repository packages two editions of the skill:
+
+- **Codex edition** — `codex/boundary-first-multi-repo-engineering/`
+- **Claude Code edition** — `claude-code/boundary-first-multi-repo-engineering/`
 
 ## 中文說明
 
@@ -11,7 +13,7 @@ Other platform-specific editions can live alongside it later.
 
 這是一個給 Codex 用的 skill，目的是幫工程任務先做對方向，再開始改程式。
 
-目前這個 repo 先封裝的是 Codex 版本，之後也可以在同一個 repo 底下並列其他平台版本。
+這個 repo 目前封裝了兩個平台版本：Codex 版和 Claude Code 版。
 
 如果你做過多 repo、前後端分離、admin tool、automation、browser extension 這類系統，你大概會知道：真正容易出事的地方，通常不是「程式不會寫」，而是「一開始就改錯 repo、看錯 owner、漏掉 contract、驗錯地方」。
 
@@ -95,17 +97,29 @@ Other platform-specific editions can live alongside it later.
 
 ### 這個 repo 裡有什麼
 
-目前的 Codex skill 放在：
+#### Codex 版
 
-- `codex/boundary-first-multi-repo-engineering/`
+放在 `codex/boundary-first-multi-repo-engineering/`，包含 `SKILL.md`、`agents/openai.yaml`、`references/`。
 
-這個資料夾裡包含：
+安裝方式：把該資料夾複製到 `~/.codex/skills/boundary-first-multi-repo-engineering/`，重新啟動 Codex。
 
-- `SKILL.md`
-- `agents/openai.yaml`
-- `references/`
+#### Claude Code 版
 
-目前內建的泛用 adapters 有：
+放在 `claude-code/boundary-first-multi-repo-engineering/`，包含 `CLAUDE.md`（入口）和 `references/`。
+
+安裝方式：把 `CLAUDE.md` 複製到你的 project root，把 `references/` 複製到 `.claude/boundary-first/`。Claude Code 會自動載入 `CLAUDE.md`。
+
+#### Claude Code 版比 Codex 版多了什麼
+
+- Decision Gate (D0-D3) 變更嚴重度分級
+- Decision tree 取代 keyword list 的 owner selection
+- 每個 adapter 內建 Common Mistake Scenario 示範
+- cross-boundary-contracts 有 3 個具體匿名化範例
+- Fallback adapter（無 adapter 匹配時的指引）
+- Conflict resolution（多 repo 規則衝突時的解決策略）
+- Maker-checker 最小證據定義
+
+兩個版本都包含相同的 5 個泛用 adapters：
 
 - backend service
 - frontend app
@@ -113,19 +127,9 @@ Other platform-specific editions can live alongside it later.
 - automation bot or sync worker
 - browser extension
 
-### 怎麼安裝
-
-把下面這個資料夾複製到你的 Codex skills 目錄：
-
-- `codex/boundary-first-multi-repo-engineering/`
-
-常見路徑會是：
-
-- `~/.codex/skills/boundary-first-multi-repo-engineering/`
-
-複製完之後，重新啟動 Codex。
-
 ### 怎麼使用
+
+#### Codex
 
 顯式呼叫：
 
@@ -138,6 +142,10 @@ Use $boundary-first-multi-repo-engineering to do a read-only preflight for a fro
 ```text
 I need to review a change that touches a frontend app, a backend route, and extension storage. Do a read-only boundary analysis first, then tell me which system is the owner and what validation depth is appropriate.
 ```
+
+#### Claude Code
+
+Claude Code 會自動載入 project root 的 `CLAUDE.md`，不需要顯式呼叫。開始任何工程任務時，workflow 會自動執行 Decision Gate 和 Preflight。
 
 ### 公開版的設計原則
 
@@ -244,49 +252,41 @@ In this kind of task, the value of the skill is not faster code generation. It i
 
 ### What Is In This Repository
 
-The actual skill lives in:
+#### Codex Edition
 
-- `boundary-first-multi-repo-engineering/`
+Lives in `codex/boundary-first-multi-repo-engineering/`. Contains `SKILL.md`, `agents/openai.yaml`, and `references/`.
 
-That folder contains:
+Install: copy the folder to `~/.codex/skills/boundary-first-multi-repo-engineering/`, then restart Codex.
 
-- `SKILL.md`
-- `agents/openai.yaml`
-- `references/`
+#### Claude Code Edition
 
-The current generic adapters cover:
+Lives in `claude-code/boundary-first-multi-repo-engineering/`. Contains `CLAUDE.md` (entry point) and `references/`.
 
-- backend service
-- frontend app
-- admin console
-- automation bot or sync worker
-- browser extension
+Install: copy `CLAUDE.md` to your project root, copy `references/` to `.claude/boundary-first/`. Claude Code auto-loads `CLAUDE.md`.
 
-### Install
+#### What Claude Code Edition Adds
 
-Copy this folder into your Codex skills directory:
+- Decision Gate (D0-D3) severity classification
+- Decision tree instead of keyword list for owner selection
+- Common Mistake Scenario in each adapter
+- 3 concrete anonymized examples in cross-boundary-contracts
+- Fallback adapter for unmatched system types
+- Conflict resolution for multi-repo rule conflicts
+- Maker-checker minimum evidence definition
 
-- `boundary-first-multi-repo-engineering/`
-
-A typical destination is:
-
-- `~/.codex/skills/boundary-first-multi-repo-engineering/`
-
-Then restart Codex.
+Both editions share the same 5 generic adapters: backend service, frontend app, admin console, automation bot, browser extension.
 
 ### Example Prompts
 
-Explicit invocation:
+#### Codex
 
 ```text
 Use $boundary-first-multi-repo-engineering to do a read-only preflight for a frontend change that may alter a backend request payload. Identify the owner boundary, contract risk, security surface, and required validation.
 ```
 
-Implicit usage:
+#### Claude Code
 
-```text
-I need to review a change that touches a frontend app, a backend route, and extension storage. Do a read-only boundary analysis first, then tell me which system is the owner and what validation depth is appropriate.
-```
+Claude Code auto-loads `CLAUDE.md` from the project root. The workflow runs automatically when you start any engineering task. No explicit invocation needed.
 
 ### Public Version Design
 
@@ -312,8 +312,9 @@ If you want Codex to think through direction, boundaries, and risk before making
 
 ### Platform Packaging
 
-This repository currently ships the Codex package here:
+This repository ships two platform-specific packages:
 
-- `codex/boundary-first-multi-repo-engineering/`
+- `codex/boundary-first-multi-repo-engineering/` — for OpenAI Codex
+- `claude-code/boundary-first-multi-repo-engineering/` — for Anthropic Claude Code
 
-That layout keeps room for future platform-specific variants in the same repository without mixing entry-point formats together.
+That layout keeps each platform's entry-point format separate while sharing the same methodology.

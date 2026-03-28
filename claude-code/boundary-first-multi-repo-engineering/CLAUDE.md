@@ -80,6 +80,7 @@ If a stop-condition surface was touched and executable verification is unavailab
 ## References
 
 - `references/decision-gate.md` -- D0-D3 severity classification
+- `references/implementation-plan-template.md` -- required plan format for D1/D2/D3
 - `references/constitution.md` -- authority order and protected surfaces (SSOT)
 - `references/owner-selection.md` -- decision tree for identifying the owner
 - `references/cross-boundary-contracts.md` -- producer/consumer model with examples

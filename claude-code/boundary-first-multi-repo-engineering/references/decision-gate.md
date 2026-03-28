@@ -61,6 +61,10 @@ Is a protected surface touched?
       YES -> D3. Get user confirmation. Write decision note. Then preflight.
 ```
 
+## Implementation Plan
+
+For D1/D2/D3 tasks, use the template in `implementation-plan-template.md` to document assumption, owner, contract/security surfaces, validation plan, and rollback stance before coding.
+
 ## Rules
 
 - **No source guessing.** If source files, local rules, or nearest tests were not read, do not assume implementation details. Read first, then classify.

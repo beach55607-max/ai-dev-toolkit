@@ -41,6 +41,10 @@ For the identified owner:
 2. Read local instructions for every touched system before editing.
 3. If the task crosses a contract boundary, also read `cross-boundary-contracts.md`.
 
+## Ambiguous Ownership
+
+When ownership is ambiguous, prefer the system that owns validation, persistence, auth, or policy. The system that enforces rules is the owner; the system that assembles inputs is the caller.
+
 ## When Several Systems Are Involved
 
 1. Identify the system of record.

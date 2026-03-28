@@ -11,12 +11,16 @@ If local rules conflict with this workflow, follow local rules and explain the c
 
 ## Step 0: Decision Gate
 
+Decision Gate decides **how much ceremony is required**. Preflight (Step 1) decides **what risks and validations apply**.
+
 Before preflight, classify the change severity. Read `references/decision-gate.md` for the full decision tree.
 
 - **D0** (local, no protected surface): proceed directly to preflight.
 - **D1** (single-repo protected surface): confirm assumption, owner, rollback stance. Then preflight.
 - **D2** (cross-boundary contract): write decision note, producer/consumer impact, validation plan. Then preflight.
 - **D3** (auth/signature, schema migration, destructive write, permissions): get user confirmation first. Maker-checker required at close-out.
+
+For trivial edits with no protected surface (typo fixes, comment updates, formatting), D0 preflight is sufficient. Do not over-apply ceremony to changes that carry no boundary, contract, or security risk.
 
 **No source guessing.** If source files, local rules, or nearest tests were not read, do not assume implementation details.
 

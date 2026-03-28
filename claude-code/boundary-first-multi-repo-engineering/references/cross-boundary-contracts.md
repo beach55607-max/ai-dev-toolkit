@@ -13,6 +13,8 @@ For every shared boundary, identify:
 
 Do not treat request payloads, response shapes, schema fields, or env bindings as local-only details.
 
+When ownership is ambiguous, prefer the system that owns validation, persistence, auth, or policy as the system of record.
+
 ## Contract Checklist
 
 Check whether the change affects:

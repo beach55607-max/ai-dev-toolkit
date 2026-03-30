@@ -6,15 +6,24 @@ Use this reference before preflight to classify the change severity and determin
 
 ### D0 — Local Implementation
 
-The change is confined to one repo or runtime, does not touch a protected surface, and has no cross-boundary impact.
+The change is confined to a single repo, does not touch any protected surface (see `constitution.md`), and has no cross-boundary impact.
 
-- No contract, auth, schema, permission, or durable state changes.
+**D0 requires ALL of the following**:
+- No information output (new API responses, UI output, report formats)
+- No new data fields or sources (new database tables, new external data sources, new cache keys)
+- No cross-module changes (3+ files across different directories)
+- No permission/security logic (auth, signatures, rate limiting)
+- No database mutation changes (INSERT/UPDATE/DELETE)
+- Affected files ≤ 3
+
+**D0 still requires**: Step 2b (Query Actual Data) + Evidence Block. See `executable-spec-planning` skill for details including BDD AC format, Ubiquitous Language Table, Code Quality Constraints, and Bug-to-Gate Closure (HR-8).
+
 - Proceed directly to preflight.
-- Standard repo lint and test are usually sufficient.
+- Use D0-specific gate or standard repo lint and test.
 
-### D1 — Single-System Protected Surface
+### D1 — Single-Repo Protected Surface
 
-The change touches a protected surface within one repo or runtime but does not cross a contract boundary.
+The change touches a protected surface within one repo but does not cross a contract boundary.
 
 Examples: adding a route, changing a storage key, modifying auth logic within the owning system.
 
@@ -28,7 +37,7 @@ Before preflight, confirm:
 
 The change affects a shared contract between two or more systems.
 
-Examples: request or response shape change, auth header format change, schema field rename consumed by another system, new event type on a shared channel.
+Examples: request/response shape change, auth header format change, schema field rename consumed by another system, new event type on a shared channel.
 
 Before preflight, confirm:
 
@@ -39,7 +48,7 @@ Before preflight, confirm:
 
 ### D3 — High-Risk Governance Change
 
-The change involves auth or signature behavior, schema migration, destructive writes, permission model changes, or infrastructure that affects multiple systems.
+The change involves auth/signature behavior, schema migration, destructive writes, permission model changes, or infrastructure that affects multiple systems.
 
 Examples: HMAC canonical format change, database migration, new extension permissions, bulk delete operation, guard script modification.
 
@@ -51,9 +60,10 @@ Before preflight, confirm everything from D2, plus:
 
 ## Decision Flow
 
-```text
-Is a protected surface touched?
-  NO  -> D0. Proceed to preflight.
+```
+Is a protected surface touched? (includes: information output, new data fields,
+  cross-module 3+ files, permission/security, database mutations)
+  NO and affected files ≤ 3 -> D0. Proceed to preflight.
   YES -> Does it cross a contract boundary?
     NO  -> D1. Confirm assumption, owner, rollback. Then preflight.
     YES -> Does it involve auth, schema migration, destructive writes, or permissions?
@@ -63,11 +73,11 @@ Is a protected surface touched?
 
 ## Implementation Plan
 
-For D1, D2, and D3 tasks, use the template in `implementation-plan-template.md` to document assumption, owner, contract or security surfaces, validation plan, and rollback stance before coding.
+For D1/D2/D3 tasks, use the template in `implementation-plan-template.md` to document assumption, owner, contract/security surfaces, validation plan, and rollback stance before coding.
 
 ## Rules
 
 - **No source guessing.** If source files, local rules, or nearest tests were not read, do not assume implementation details. Read first, then classify.
-- **Rollback is mandatory for durable changes.** Any change to durable state that does not state a rollback path, fallback, or blast-radius control cannot be closed out.
-- **Cross-boundary safety requires both sides.** If a shared contract changes and only one side was validated, the task is not complete.
-- **D2/D3 require maker-checker.** Minimum evidence is one of: explicit user confirmation before implementation, explicit second review approval, or explicit user waiver. State which evidence applies in close-out.
+- **Rollback is mandatory for durable changes.** Any change to durable state (database, key-value, storage, spreadsheets) that does not state a rollback path, fallback, or blast-radius control cannot be closed out.
+- **Cross-boundary safety requires both sides.** If a shared contract changes and only one side was validated, the task is not complete. This is a hard rule, not a suggestion.
+- **D2/D3 require maker-checker.** If the task touches protected surfaces at D2 or D3 level, require a second-pass review or explicit user confirmation before marking as done. Minimum evidence for maker-checker: (a) user explicitly confirmed the approach before implementation, or (b) a second review pass was requested and the user approved, or (c) the user explicitly waived review. State which evidence applies in close-out.

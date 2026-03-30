@@ -68,7 +68,7 @@ Examples:
 
 - a test that asserts the request schema matches what the producer validates
 - a test that asserts the response shape matches what the consumer parses
-- a test that verifies signature computation matches between sender and receiver
+- a test that verifies HMAC or signature computation matches between sender and receiver
 
 Contract tests are the most valuable kind of mechanical verification for multi-repo work because they catch the exact class of failure this workflow is designed to prevent: silent drift between producer and consumer.
 
@@ -86,7 +86,7 @@ Sufficient for: D0/D1 changes that touch production code but not protected surfa
 
 ### Level 3: Gate (Quick)
 
-Use for: D1 changes that touch a protected surface within one repo. Route changes, storage key changes, env binding changes.
+Use for: D0 (D0-specific gate from executable-spec-planning skill) or D1 changes that touch a protected surface within one repo. Route changes, storage key changes, env binding changes.
 
 ### Level 4: Gate (Full / PR)
 

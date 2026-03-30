@@ -286,7 +286,7 @@ A planning workflow that turns fuzzy requirements into executable specifications
 - Ubiquitous Language Table for cross-system field mapping
 - D0 fast path with dedicated template and gate (`gate-quick-d0`)
 - Bug-to-Gate Closure (HR-8) — every confirmed bug must leave a regression gate
-- 31-check completeness guard (Layer A manual + Layer B executable scripts)
+- 31-check completeness guard (Layer A manual; Layer B executable scripts concept included, scripts not bundled in public pack)
 - Risk escalation triggers (permission/DB mutations/fan-in/routing/prior incidents)
 - Governance audit (7 items) in close-out reports
 
@@ -320,7 +320,9 @@ A falsification-first code and spec review skill that forces AI reviewers to pro
 
 ### Boundary-First Engineering
 
-**Claude Code:** Copy `claude-code/.../CLAUDE.md` to your project root, copy `references/` to `.claude/boundary-first/`. Done — it auto-loads every conversation.
+**Claude Code (skill 方式):** Copy `claude-code/boundary-first-multi-repo-engineering/` to `.claude/skills/boundary-first-multi-repo-engineering/`. 包內提供 `SKILL.md`（有 frontmatter）供上傳使用。
+
+**Claude Code (CLAUDE.md 方式):** 把 `CLAUDE.md` 的內容貼進專案根目錄的 `CLAUDE.md`，並把 `references/` 複製到同層。
 
 **Codex:** Copy `codex/.../` to `~/.codex/skills/boundary-first-multi-repo-engineering/`, restart Codex.
 
@@ -370,7 +372,7 @@ See [adversarial-code-review/README.md](adversarial-code-review/README.md) for d
 |                    Trust calibration (embed known defect)      |
 |                    R1-R18 review dimensions (incl Bug-to-Gate) |
 | Guard Layer        31-check completeness (Layer A manual)      |
-|                    7 executable guard scripts (Layer B)        |
+|                    Layer B guard scripts (concept; not bundled)|
 | Close-out Layer    Governance audit (7 items)                  |
 |                    Regression Gate section (HR-8)              |
 |                    Before/After metrics + rejected paths       |
@@ -523,6 +525,9 @@ skill_shared/
 ├── README.md                                           <- You are here
 ├── codex/boundary-first-multi-repo-engineering/        <- Codex edition
 ├── claude-code/boundary-first-multi-repo-engineering/   <- Claude Code edition
+│   ├── CLAUDE.md                                        <- For pasting into project CLAUDE.md
+│   ├── SKILL.md                                         <- For uploading as Claude Code skill
+│   └── references/
 ├── executable-spec-planning/                            <- Agent-agnostic planning
 │   ├── SKILL.md
 │   └── references/

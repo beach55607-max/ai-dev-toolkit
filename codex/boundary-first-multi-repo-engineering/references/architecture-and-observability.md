@@ -4,31 +4,26 @@ Use this reference when the task may blur boundaries between systems or add nois
 
 ## Boundary-First Architecture Principle
 
-Prefer edits that reinforce existing ownership:
+Each adapter defines its own ownership scope. The key rule: do not move policy or storage rules into the caller just because that seems faster.
 
-- backend owns validation, policy, and persistence
-- frontend owns interaction flow and presentation
-- admin tools own operator workflows
-- automation owns scheduled or batch orchestration
-- extensions own manifest, runtime, and message passing
-
-Do not move policy or storage rules into the caller just because that seems faster.
+- Backend owns validation, policy, and persistence.
+- Frontend owns interaction flow and presentation.
+- Admin tools own operator workflows.
+- Automation owns scheduled or batch orchestration.
+- Extensions own manifest, runtime, and message passing.
 
 ## Observability Rules
 
 Keep two layers of signal:
 
-- normal operational logs for important business and runtime decisions
-- debug-only logs for noisy internals that are useful during investigations
-
-Normal logs should focus on:
+### Normal Operational Logs
 
 - lifecycle stage
 - route or workflow outcome
 - correlation ID
 - compact metadata that helps triage failures
 
-Debug-only logs may include:
+### Debug-Only Logs
 
 - branch diagnostics
 - payload summaries
@@ -36,3 +31,5 @@ Debug-only logs may include:
 - expensive internal traces
 
 Avoid raw payload dumps unless there is an explicit opt-in path and a clear need.
+
+Do not add noisy diagnostics without a toggle strategy. Debug output should be off by default and easy to enable only when needed.

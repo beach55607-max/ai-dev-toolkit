@@ -23,7 +23,7 @@ adversarial-code-review/
 ├── SKILL.md                           <- Core skill (paste into any LLM)
 ├── adversarial-review.md              <- Launcher template (for Claude Code slash commands)
 ├── references/
-│   └── calibration-cases.md           <- 8 real failure cases for reviewer calibration
+│   └── calibration-cases.md           <- 10 real failure cases for reviewer calibration
 └── examples/
     ├── example-code-review.md         <- Sample code review request + output
     ├── example-spec-review.md         <- Sample spec review request + output
@@ -53,7 +53,7 @@ Copy to `~/.codex/skills/adversarial-code-review/`, restart Codex.
 | Mode | When | What Gets Checked |
 |------|------|-------------------|
 | **Code Mode** | PRs, code changes, AI-generated code | Database queries, cache keys, data semantics, error handling, temporal dependencies |
-| **Spec Mode** | Design docs, specs, architecture proposals | Completeness, internal consistency, implementability, data contracts, security/permissions |
+| **Spec Mode** | Design docs, specs, architecture proposals | Completeness, internal consistency, implementability, data contracts, security/permissions, code quality constraints |
 | **Release Gate Mode** | Pre-deploy verification | Both checklists + deploy verification + cross-validation |
 
 ## Three Intensity Levels
@@ -94,7 +94,7 @@ The best cases come from real incidents where an AI reviewer was wrong. See `ref
 
 ### Add domain-specific checklists
 
-Add items to CL-1 through CL-5 (Code) or CL-S1 through CL-S5 (Spec) based on your stack's failure modes.
+Add items to CL-1 through CL-5 (Code) or CL-S1 through CL-S6 (Spec) based on your stack's failure modes.
 
 ### Map to your risk classification
 

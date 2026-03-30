@@ -68,7 +68,7 @@ Use [owner-selection.md](./references/owner-selection.md) first, then pick one a
 
 If the task spans multiple systems, read [cross-boundary-contracts.md](./references/cross-boundary-contracts.md) after owner selection.
 If multiple systems have conflicting local rules, rollout constraints, or validation expectations, read [conflict-resolution.md](./references/conflict-resolution.md).
-If no adapter matches cleanly, apply the preflight protocol directly, state the assumed system type, and prefer the system that owns validation, persistence, auth, or runtime policy.
+If no adapter matches cleanly, read [fallback-adapter.md](./references/fallback-adapter.md), apply the preflight protocol directly, state the assumed system type, and prefer the system that owns validation, persistence, auth, or runtime policy.
 Treat repeated no-match cases as a signal to create a new adapter later, not as a reason to skip boundary analysis now.
 
 ## Handoff To Executable Spec

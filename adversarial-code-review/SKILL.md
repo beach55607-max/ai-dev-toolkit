@@ -1,11 +1,11 @@
 ---
 name: adversarial-code-review
-description: "Adversarial code review skill for LG LineBot ecosystem. Use whenever reviewing code, specs, PRs, or AI-generated output for correctness. Triggers on: 'review this code', 'check this PR', 'audit', 'verify implementation', 'is this correct', 'does this match spec', any code review request, any spec-vs-code verification, any AI output validation, or when the PM asks to verify another AI reviewer's output (Claude, Codex, ChatGPT, etc.). Also use when the PM says '確認', '佈署', '審查', 'review', or asks 'Claude 說的對嗎', 'Codex 說的對嗎', or 'AI 說的對嗎'. This skill encodes the PM's actual review methodology distilled from 30+ real incidents where AI reviewers gave wrong answers."
+description: "Adversarial code review skill. Use whenever reviewing code, specs, PRs, or AI-generated output for correctness. Triggers on: 'review this code', 'check this PR', 'audit', 'verify implementation', 'is this correct', 'does this match spec', any code review request, any spec-vs-code verification, any AI output validation, or when the user asks to verify another AI reviewer's output (Claude, Codex, ChatGPT, etc.). Also use when the user says '確認', '佈署', '審查', 'review', or asks 'Claude 說的對嗎', 'Codex 說的對嗎', or 'AI 說的對嗎'. This skill encodes a review methodology distilled from 30+ real incidents where AI reviewers gave wrong answers."
 ---
 
-# Adversarial Code Review — LG LineBot Ecosystem
+# Adversarial Code Review
 
-> **Role Mapping**: 本 skill 中的「PM」= Final Authority。若用於非 LG 專案，請將 PM 讀作 designated Final Authority。
+> **Role Mapping**: 本 skill 中的「PM」= Final Authority。若您的團隊無 PM 角色，請將 PM 讀作 designated Final Authority。
 
 > **Core Principle**: 審查的目的不是確認「看起來對」，而是證明「無法被證偽」。
 > 每一個 PASS 判定都需要正面證據 + 反證場景排除。沒有證據的 PASS = 審查失敗。
@@ -333,7 +333,7 @@ description: "Adversarial code review skill for LG LineBot ecosystem. Use whenev
 1. 對每個 :red_circle: finding，嘗試構造「其實沒問題」的論證
 2. 如果能成功推翻 → 降級為 :yellow_circle: 或移除
 3. 如果推翻不了 → 維持 :red_circle:，並記錄推翻嘗試作為額外證據
-4. 對每個 :white_check_mark:，問自己：「Case 1~9 的哪個模式可能在這裡重演？」
+4. 對每個 :white_check_mark:，問自己：「Case 1~10 的哪個模式可能在這裡重演？」
 
 **目的**：防止過度報告（找太多低價值 finding 湊數）和漏報（自我確認偏誤）。
 
@@ -353,7 +353,7 @@ description: "Adversarial code review skill for LG LineBot ecosystem. Use whenev
 
 ## §7 Execution-Layer Audit（5 層，Release Gate 或有 repo access 時使用）
 
-來源：Session_Closure_Report_20260322_v2.md — PM 升級後的 v2 Audit Prompt
+來源：derived from internal release-audit iterations — PM 升級後的 v2 Audit Prompt
 
 | Layer | 做什麼 | 方法 | 抓什麼 |
 |:-----:|--------|------|--------|
@@ -487,7 +487,7 @@ description: "Adversarial code review skill for LG LineBot ecosystem. Use whenev
 ### L3 Adversarial（D2/D3）
 ```
 1. 選擇模式（Code / Spec / Release Gate），先讀 boundary-first 分類與 executable spec（若存在）
-2. 讀 §0 校準案例（9 個）→ 校準審查直覺
+2. 讀 §0 校準案例（10 個）→ 校準審查直覺
 3. 逐項走 §2 對應 Checklist → 標記 🔴/🟡/✅/⬛
    - Release Gate: 跑兩套 Checklist（Code + Spec）
 4. 每個 🟡 和 ✅ → 回答 §1 四問必答

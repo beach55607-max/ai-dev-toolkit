@@ -31,12 +31,12 @@ Decision Gate decides **how much ceremony is required**. Preflight (Step 1) deci
 
 Before preflight, classify the change severity. Read `references/decision-gate.md` for the full decision tree.
 
-- **D0** (local, no protected surface): proceed directly to preflight.
+- **D0** (local, no protected surface, no information output / new data fields / cross-module / permission-security / database mutations, ≤ 3 files): proceed directly to preflight. Step 2b (Query Actual Data) + Evidence Block still required.
 - **D1** (single-repo protected surface): confirm assumption, owner, rollback stance. Then preflight.
 - **D2** (cross-boundary contract): write decision note, producer/consumer impact, validation plan. Then preflight.
 - **D3** (auth/signature, schema migration, destructive write, permissions): get user confirmation first. Maker-checker required at close-out.
 
-For trivial edits with no protected surface (typo fixes, comment updates, formatting), D0 preflight is sufficient. Do not over-apply ceremony to changes that carry no boundary, contract, or security risk.
+For trivial edits with no protected surface (typo fixes, comment updates, formatting), D0 preflight is sufficient. D0 still requires Step 2b (read source + query actual data) and Evidence Block. Do not over-apply ceremony to changes that carry no boundary, contract, or security risk.
 
 **No source guessing.** If source files, local rules, or nearest tests were not read, do not assume implementation details.
 
@@ -76,6 +76,7 @@ If the task spans multiple systems, also read `references/cross-boundary-contrac
 - **Rollback is mandatory for durable changes.** No rollback/fallback/blast-radius control = no close-out.
 - **File safety.** Do not delete, move, rename, or broadly overwrite files just to reduce complexity or silence failing paths. Read repo-local instructions (`CLAUDE.md`, `AGENTS.md`, or equivalent) before cleanup or broad rewrites. Treat file deletes, broad moves, and overwrite-heavy rewrites as stop conditions requiring explicit user request.
 - Do not pretend caller-side validation is enough when a producer or shared contract also changes.
+- **Bug-to-Gate Closure.** Any confirmed and replayable bug must leave behind a maintained regression gate at the narrowest effective layer. If no executable gate is currently feasible, close-out must record why, the temporary control, the owner, and the remediation date.
 
 ## Step 3: Close-Out
 

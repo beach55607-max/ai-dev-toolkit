@@ -8,9 +8,18 @@ Use this reference before preflight to classify the change severity and determin
 
 The change is confined to a single repo, does not touch any protected surface (see `constitution.md`), and has no cross-boundary impact.
 
-- No contract, auth, schema, or durable state changes.
+**D0 requires ALL of the following**:
+- No information output (new API responses, UI output, report formats)
+- No new data fields or sources (new database tables, new external data sources, new cache keys)
+- No cross-module changes (3+ files across different directories)
+- No permission/security logic (auth, signatures, rate limiting)
+- No database mutation changes (INSERT/UPDATE/DELETE)
+- Affected files ≤ 3
+
+**D0 still requires**: Step 2b (Query Actual Data) + Evidence Block. See `executable-spec-planning` skill for details including BDD AC format, Ubiquitous Language Table, Code Quality Constraints, and Bug-to-Gate Closure (HR-8).
+
 - Proceed directly to preflight.
-- Standard repo lint and test are sufficient.
+- Use D0-specific gate or standard repo lint and test.
 
 ### D1 — Single-Repo Protected Surface
 
@@ -52,8 +61,9 @@ Before preflight, confirm everything from D2, plus:
 ## Decision Flow
 
 ```
-Is a protected surface touched?
-  NO  -> D0. Proceed to preflight.
+Is a protected surface touched? (includes: information output, new data fields,
+  cross-module 3+ files, permission/security, database mutations)
+  NO and affected files ≤ 3 -> D0. Proceed to preflight.
   YES -> Does it cross a contract boundary?
     NO  -> D1. Confirm assumption, owner, rollback. Then preflight.
     YES -> Does it involve auth, schema migration, destructive writes, or permissions?

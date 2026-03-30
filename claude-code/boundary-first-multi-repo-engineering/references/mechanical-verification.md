@@ -86,7 +86,7 @@ Sufficient for: D0/D1 changes that touch production code but not protected surfa
 
 ### Level 3: Gate (Quick)
 
-Use for: D1 changes that touch a protected surface within one repo. Route changes, storage key changes, env binding changes.
+Use for: D0 (D0-specific gate from executable-spec-planning skill) or D1 changes that touch a protected surface within one repo. Route changes, storage key changes, env binding changes.
 
 ### Level 4: Gate (Full / PR)
 

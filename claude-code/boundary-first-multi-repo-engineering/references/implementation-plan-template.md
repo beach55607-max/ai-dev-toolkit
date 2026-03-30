@@ -1,6 +1,6 @@
 # Implementation Plan Template
 
-Use this template when the Decision Gate classifies the task as D1, D2, or D3. D0 tasks may skip this template.
+Use this template when the Decision Gate classifies the task as D1, D2, or D3. D0 tasks should use the D0-specific template from the executable-spec-planning skill instead.
 
 ## When To Use
 
@@ -40,6 +40,13 @@ Consumer: [repo, caller, or downstream system affected]
 - [anything that could not be verified before implementation]
 - [or "none"]
 ```
+
+## SSOT Hierarchy
+
+- **Implementation Plan** = preflight input. Documents assumption, owner, rollback stance before coding.
+- **Implementation Spec** = execution SSOT. Documents scope, locked decisions, phases, gates, contracts.
+- **If conflict exists after spec approval, the Spec supersedes the Plan.**
+- Close-out references both: Plan for "planned vs actual", Spec for verification evidence.
 
 ## Rules
 

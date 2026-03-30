@@ -71,12 +71,23 @@ If multiple systems have conflicting local rules, rollout constraints, or valida
 If no adapter matches cleanly, apply the preflight protocol directly, state the assumed system type, and prefer the system that owns validation, persistence, auth, or runtime policy.
 Treat repeated no-match cases as a signal to create a new adapter later, not as a reason to skip boundary analysis now.
 
+## Handoff To Executable Spec
+
+If the task will be handed to an AI or human for execution, or preflight identifies D1+ / protected surfaces / cross-boundary contracts, convert the preflight result into a downstream executable spec before coding.
+
+Boundary-first owns the upstream questions: D0-D3 level, owner, consumer, protected surfaces, validation depth, stop conditions.
+
+Executable-spec-planning owns the downstream contract: Scope, Decision Lock, Evidence Block, CONTRACT (when applicable), Code Quality Constraints, Gate / Rollback / Final Authority sign-off.
+
+Adversarial review consumes both: the boundary classification plus the executable spec.
+
 ## Core Non-Negotiables
 
 - Put boundaries before implementation.
 - Treat repo-local `AGENTS.md`, task specs, and guardrails as higher authority than this skill.
 - If source files, local rules, or the nearest tests were not read, do not assume implementation details.
 - Treat auth, routes, schemas, env bindings, storage keys, permissions, and message formats as protected surfaces.
+- If an executable spec exists, treat it as the downstream SSOT for scope, locked decisions, evidence, code-quality constraints, and rollback.
 - Do not delete, move, rename, or broadly overwrite user files just to make the task easier.
 - Keep default logs lean and operational; gate noisy diagnostics behind explicit debug-only paths.
 - Prefer the strongest repo-defined verification path over shallow spot checks.
@@ -84,6 +95,7 @@ Treat repeated no-match cases as a signal to create a new adapter later, not as 
 - Treat durable state changes as incomplete until rollback, fallback, or blast-radius stance is explicit.
 - If a shared contract changes and only one side was validated, the task is partial or blocked, not passed.
 - D2 and D3 work require maker-checker evidence or explicit user confirmation before close-out.
+- **Bug-to-Gate Closure.** Any confirmed and replayable bug must leave behind a regression gate. If no gate is feasible, close-out must record why, the temporary control, the owner, and the remediation date.
 
 For deeper guidance, read:
 

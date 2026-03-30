@@ -9,16 +9,6 @@ Use this reference when a short user request does not name the target repo or ru
 - Prefer the system that owns validation, persistence, auth, or runtime policy over the caller that only assembles inputs.
 - Prefer the repo named in the closest spec when the request is phrased by phase or feature instead of filename.
 
-## Decision Order
-
-Use this order before relying on naming clues:
-
-1. If one system owns persistence, auth, or schema enforcement, start there.
-2. If one system only assembles inputs and another validates or stores them, the validating or storing system owns the shared contract.
-3. If the wire format does not change and only user interaction, rendering, or local state changes, the frontend or caller usually owns the task.
-4. If the task changes operator workflows, review states, or privileged bulk actions, the admin surface usually owns the workflow while the backend still owns the contract.
-5. If no adapter matches well, run the full preflight anyway, state the assumed system type, and document why no adapter fit cleanly.
-
 ## Fast Ownership Map
 
 ### Backend Service
@@ -31,7 +21,7 @@ Typical owner of:
 - webhook handling
 - queue or worker execution
 
-Secondary clues:
+Common clues:
 
 - `route`
 - `handler`
@@ -52,7 +42,7 @@ Typical owner of:
 - frontend environment wiring
 - API client usage
 
-Secondary clues:
+Common clues:
 
 - `page`
 - `component`
@@ -72,7 +62,7 @@ Typical owner of:
 - moderation or promotion screens
 - privileged operator actions
 
-Secondary clues:
+Common clues:
 
 - `admin`
 - `review`
@@ -90,7 +80,7 @@ Typical owner of:
 - ETL or batch jobs
 - spreadsheet or document automation
 
-Secondary clues:
+Common clues:
 
 - `cron`
 - `sync`
@@ -110,7 +100,7 @@ Typical owner of:
 - extension storage
 - message passing between extension contexts
 
-Secondary clues:
+Common clues:
 
 - `manifest.json`
 - `content script`
@@ -127,8 +117,6 @@ Use this order:
 2. Identify the producer that defines the contract.
 3. Identify the consumer that will break if the contract changes.
 4. Read the local rules for every touched system before editing.
-
-If no listed system fits well, choose the system that owns validation, persistence, or runtime policy and record the mismatch explicitly in the final summary.
 
 ## First Files To Read
 

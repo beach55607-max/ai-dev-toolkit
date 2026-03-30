@@ -1,6 +1,6 @@
 # Implementation Plan Template
 
-Use this template when the Decision Gate classifies the task as D1, D2, or D3. D0 tasks may skip this template.
+Use this template when the Decision Gate classifies the task as D1, D2, or D3. D0 tasks should use `templates/d0-spec-template.md` (from executable-spec-planning skill) instead of this template.
 
 ## When To Use
 
@@ -15,31 +15,38 @@ Use this template when the Decision Gate classifies the task as D1, D2, or D3. D
 
 Severity: D1 / D2 / D3
 Assumption: [what behavior is expected to change and why]
-Owner: [repo or runtime and layer that owns the change]
-Consumer: [repo, caller, or downstream system affected]
+Owner: [repo and layer that owns the change]
+Consumer: [repo or caller affected]
 
 ### Contract Surface
-- [list request/response shapes, auth headers, schema fields, env bindings, storage keys, or message formats that change]
+- [list request/response shapes, auth headers, canonical strings, schema fields, env bindings, storage keys, or message formats that change]
 - [or "none" if no contract surface is affected]
 
 ### Security Surface
-- [list auth, signatures, secrets, durable writes, permissions, or host access affected]
+- [list HMAC, auth, nonce/timestamp, secrets, D1/KV/Sheet writes, extension permissions, or host access affected]
 - [or "none" if no security surface is affected]
 
 ### Validation Plan
-- [specific test commands to run on the owner side]
-- [specific test commands to run on the consumer side, if D2/D3]
+- [specific commands on owner side: e.g., npm run gate:pr for lg-proxy-worker]
+- [specific commands on consumer side, if D2/D3: e.g., npm run ci for lg-s5-admin-hub]
 - [strongest gate to run, if available]
 
 ### Rollback Stance
 - [how to revert if the change fails]
 - [or "no durable state change" if not applicable]
-- [for D2/D3: staged rollout plan if breaking change]
+- [for D2/D3: staged rollout plan if breaking change, dual-format transition window]
 
 ### Unknowns
 - [anything that could not be verified before implementation]
 - [or "none"]
 ```
+
+## SSOT Hierarchy
+
+- **Implementation Plan** = preflight input. Documents assumption, owner, rollback stance before coding.
+- **Implementation Spec** = execution SSOT. Documents scope, locked decisions, phases, gates, contracts.
+- **If conflict exists after spec approval, the Spec supersedes the Plan.**
+- Close-out references both: Plan for "planned vs actual", Spec for verification evidence.
 
 ## Rules
 

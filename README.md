@@ -75,89 +75,211 @@
 
 ---
 
-## End-to-End 示例：完整生命週期
+## End-to-End 示例：完整生命週期（10 Gate 閉環）
 
-> 場景：在 API 加入批次庫存查詢。涉及資料庫 schema、cache 層、和一個前端 consumer。
+> 場景：為電商平台建立「智慧推薦引擎」。涉及新 API endpoint、資料庫 schema、cache 層、和前端 consumer。從零開始，方向未定。
 
-### Phase 1: 決定（Boundary-First Engineering）
+### G-1: Discovery（Brainstorming Capture）
 
 ```text
-Prompt: "Use boundary-first to preflight a batch inventory query feature
-         that adds a new API endpoint and changes the DB schema."
+Stakeholder: "我想做一個推薦引擎，讓使用者看到最適合的產品組合。"
 
-產出：
-  - Owner: backend-service repo, data layer
-  - Consumer: frontend-app repo（呼叫新 endpoint）
-  - 風險: D2（跨 repo contract + schema 變更）
-  - Protected surfaces: DB schema, API response shape, cache keys
-  - Rollback: schema migration 必須向後相容
-  - 行動: 需要先寫 implementation spec
+Agent 輸出：
+
+📋 GATE G-1 Discovery
+- 功能方向:
+  1. 規則式推薦（依容量匹配 + 預算區間）
+  2. 協同過濾（依相似使用者的購買紀錄）
+  3. 混合式（規則為主 + 協同為輔）
+- 雙路互博: Agent A 提 3 方向 / Agent B 提 2 方向，交集為規則式
+- 開放問題:
+  - 排序邏輯？（最便宜 vs 最適合 vs 最熱賣）
+  - 資料來源？（hardcoded vs database vs API）
+  - 推薦結果上限幾組？
+
+🚦 Stakeholder REVIEW — APPROVED / REVISE / REJECT
 ```
 
-### Phase 2: 規劃（Executable Spec Planning）
+Stakeholder: **APPROVED**（選方向 1 規則式，排序用「最適合」，資料從 database 讀）
+
+### G-2: Concept Critique（評估可行性）
 
 ```text
-Prompt: "Write an implementation spec for the batch inventory query.
-         Include Decision Lock, acceptance criteria, and rollback per phase."
+Agent 對選定方向做 5 項必檢：
 
-產出（節錄）：
-  - Decision Lock Table:
-    | 決策               | 選擇                 | 負責人 | 理由                |
-    |--------------------|---------------------|--------|---------------------|
-    | 查詢策略            | Batch + Promise.all | Final Authority | 從 N*4 降到 U+3 次  |
-    | Cache invalidation | Versioned key prefix | Final Authority | Edge cache TTL 問題 |
+📋 GATE G-2 Concept Critique
+- 業務合理性: PASS — 規則式推薦透明度高，業務可以解釋「為什麼推這個」
+- 功能完整性: BLOCKED — 缺「壁掛 vs 落地」篩選選項，使用者場景不完整
+- UX 合理性: BLOCKED — 如果排序「由貴到便宜」，業務會被質疑推貴的
+- 技術可行性: PASS — 規則式不需 ML，前端可處理
+- 資料來源: PASS — database 有完整產品規格表
 
-  - 驗收標準：
-    ✅ "7 items, 7 unique groups → 查詢次數 = 10 (U+3)"
-    ✅ "單筆 combo 失敗不影響整批"
-    ❌ "效能改善"（拒絕：不可量測）
+⚠️ CHALLENGE: 排序「最適合」的定義是什麼？容量匹配度？如果超過需求 10% 算不算適合？
 
-  - Scope Negative List：
-    - 不重構現有單筆查詢路徑
-    - 不改 cache TTL 值
+🚦 Stakeholder REVIEW — APPROVED / REVISE / REJECT
 ```
 
-### Phase 3: 施工（你的 AI Agent）
+Stakeholder: **REVISE**（加上篩選選項、排序改為「容量匹配度最高」、超過 110% 不推薦）
 
-AI agent 根據 spec 實作。Code 改動送成 PR。
+Agent 修正後重新提交 G-2 → Stakeholder **APPROVED**
 
-### Phase 4: 驗證（Adversarial Code Review）
+### G-3: Canonicalize（定稿）
 
 ```text
-Prompt: "Review this PR using adversarial-code-review.
-         Mode: Code, Intensity: L3 Adversarial."
+Agent 把 G-1 發想 + G-2 評估結果寫成 canonical spec：
 
-產出（節錄）：
-  F-01 (🟡): Spec 宣稱 "≤4 queries" 但 code 實際 U+3。
-    7 個 unique groups → 10 次查詢，不是 4 次。
-    判定：行為正確，文件不精確。不 block。
+📋 GATE G-3 Canonicalize
+- Canonical doc: recommendation-engine-spec-v1.md
+- 資料來源: database（product_specs table）
+- Scope In: 規則式推薦、容量匹配排序、安裝類型篩選、上限 3 組
+- Scope Out: 協同過濾、價格排序、使用者歷史
 
-  F-02 (✅): Fair-share 計算鏈路追蹤驗證完成。
-    手算測試場景數字與預期一致。
-
-  F-03 (🟡): Share-group 查詢有 N+1 pattern。
-    7 unique groups → 7 次循序 DB 查詢。
-    判定：目前規模可接受，標記為未來優化項。
-
-  Execution Evidence:
-    | # | 指令                              | 結果             |
-    |---|----------------------------------|-----------------|
-    | 1 | npx vitest run combo.test.ts     | 12/12 PASS      |
-    | 2 | grep -rn 'ON CONFLICT' src/      | 3 matches, all parameterized |
-
-  Overall: 🟡 CONDITIONAL-GO（修正文件，接受 N+1）
+🚦 Stakeholder REVIEW — APPROVED / REVISE / REJECT
 ```
 
-### Close-Out
+Stakeholder: **APPROVED**
+
+### G0: Classify + Preflight（Boundary-First）
 
 ```text
-  Decision level: D2
-  Owner: backend-service, data layer
-  Consumer: frontend-app
-  Surfaces touched: DB schema, API response shape, cache keys
-  Validation: gate:pr PASS on backend, build PASS on frontend
-  Rollback: schema migration is additive（向後相容）
-  Regression Gate: integration test for batch query edge cases added
+📋 GATE G0 Classify + Preflight
+- D-level: D2（跨 repo contract — backend API + frontend consumer）
+- Owner: backend-service repo, data layer
+- Consumer: frontend-app repo
+- Protected surfaces: DB schema, API response shape, cache keys
+- Rollback: schema migration 向後相容，feature flag 可關閉推薦模組
+
+🚦 Stakeholder REVIEW — APPROVED / OVERRIDE to D[N]
+```
+
+Stakeholder: **APPROVED D2**
+
+### G1: Architecture Fit
+
+```text
+📋 GATE G1 Architecture Fit
+- Core assumption: 規則式推薦（不需 ML pipeline）
+- Validation: G-2 已確認規則式足夠
+- Data layer: database 讀取（不 hardcode，因為產品規格會更新）
+
+🚦 Stakeholder REVIEW — APPROVED / REVISE
+```
+
+Stakeholder: **APPROVED**
+
+### G2: Spec Lock（Executable Spec Planning）
+
+```text
+Spec v1 產出（節錄）：
+
+- Decision Lock Table:
+  | 決策               | 選擇                   | 理由                |
+  |--------------------|----------------------|---------------------|
+  | 推薦排序            | 容量匹配度 descending  | G-2 stakeholder 決定 |
+  | 超額閾值            | 110%，超過不推          | G-2 stakeholder 決定 |
+  | 資料來源            | database              | G-3 定稿             |
+
+- 驗收標準（BDD）：
+  Given: 房間需求 3.6kW, 產品 A=3.2kW, B=3.6kW, C=4.0kW, D=5.0kW
+  When:  查詢推薦
+  Then:  排序 B(100%) > C(111%→排除) > A(89%) → 推薦 B, A
+
+- Checker review: 2 blockers resolved → UNBLOCKED
+
+📋 GATE G2 Spec Lock
+- Spec: v1.2 (post-checker)
+- Decision Lock: all locked
+🚦 Stakeholder (Final Authority): GO
+```
+
+### G3: Review Mode Lock
+
+```text
+📋 GATE G3 Review Mode
+- Risk: D2 → Mode A forced（dual AI review）
+🚦 Stakeholder: APPROVED
+```
+
+### G4: Implementation Done
+
+```text
+AI agent 根據 spec 實作。跑 gate:pr。
+
+📋 GATE G4 Implementation
+- Gate: gate:pr PASS (backend) + build PASS (frontend)
+- Files: 8 files changed
+🚦 Stakeholder: APPROVED
+```
+
+### G5: Adversarial Review（Full Review Pipeline）
+
+```text
+Phase 2 (Claude) + Phase 3 (Codex) 並行：
+
+Claude findings:
+  F-01 (🟡): 匹配度計算用整數除法，3200/3600 = 0 而不是 0.89
+  F-02 (✅): 排序邏輯正確
+
+Codex findings:
+  F-01 (🟡): 同上（共識 = 高信度，必修）
+  F-03 (🟡): 缺少「0 筆推薦」的空狀態 UI
+
+修復 F-01 + F-03 → Phase 5 regression scan → 0 新問題
+
+📋 GATE G5 Adversarial Review
+- Claude: 0 P0, 1 P1 (fixed), 1 P2
+- Codex: 0 P0, 1 P1 (fixed), 1 P2
+- Consensus: F-01 (fixed)
+🚦 Stakeholder: APPROVED
+```
+
+### G6: Close-Out
+
+```text
+📋 GATE G6 Close-out
+
+## Phase Registry
+| Gate | Phase | Status | Evidence | Stakeholder ACK |
+|------|-------|--------|----------|-----------------|
+| G-1 | Discovery | PASS | 3 directions explored | 2026-04-01 APPROVED |
+| G-2 | Concept Critique | PASS | 5/5 checked, 2 REVISED | 2026-04-01 APPROVED |
+| G-3 | Canonicalize | PASS | spec-v1.md | 2026-04-01 APPROVED |
+| G0 | Classify | PASS | D2 confirmed | 2026-04-01 APPROVED |
+| G1 | Arch Fit | PASS | rule-based, DB source | 2026-04-01 APPROVED |
+| G2 | Spec Lock | PASS | spec-v1.2, 0 blockers | 2026-04-01 GO |
+| G3 | Review Mode | PASS | Mode A (dual) | 2026-04-01 APPROVED |
+| G4 | Implementation | PASS | gate:pr PASS | 2026-04-01 APPROVED |
+| G5 | Review | PASS | 0 P0, 0 P1 remaining | 2026-04-01 APPROVED |
+| G6 | Close-out | PASS | Registry complete | 2026-04-01 APPROVED |
+
+## Governance Audit
+| # | Principle | Status |
+|---|-----------|--------|
+| GA-1 | Measurable | ✅ |
+| GA-2 | Verifiable | ✅ |
+| GA-3 | Auditable | ✅ |
+| GA-4 | CONTRACT | ✅ |
+| GA-5 | Rollback SOP | ✅ |
+| GA-6 | Kill Switch | ✅ (feature flag) |
+| GA-7 | Cost Cap | ✅ |
+| GA-8 | Phase Compliance | ✅ (10/10 Gates PASS) |
+
+Regression Gate: integration test for capacity matching + edge case (110% threshold)
+Residual risk: N+1 query pattern at scale (P2, deferred)
+
+🚦 Stakeholder SIGN-OFF: APPROVED
+```
+
+### 對比：如果沒有 UGP 會怎樣？
+
+```text
+真實案例：AI agent 在 G-2 階段自行跳過概念評估，直接寫 code。結果：
+- 排序「由貴到便宜」→ 業務被客戶質疑推貴的（G-2 業務合理性該攔住）
+- 缺壁掛/落地篩選 → 推薦結果不完整（G-2 功能完整性該攔住）
+- 超額 110% 的產品也推 → 客戶買了才發現不合適（G-2 UX 合理性該攔住）
+- 7 輪 stakeholder 手動修正，其中 4 輪本應在 G-2 就被發現
+
+UGP 的價值：stakeholder 在 G-2 花 10 分鐘 REVISE，省掉後面 2+ 小時的迭代。
 ```
 
 ---

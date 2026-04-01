@@ -36,8 +36,11 @@ description: "Adversarial code review skill. Use whenever reviewing code, specs,
 
 - 若上游已有 `boundary-first-multi-repo-engineering` 輸出，**直接繼承** D0-D3、owner、consumer、surfaces touched、validation path；不要在 review 階段自己重造分類。
 - 若上游已有 `executable-spec-planning` spec，**把 spec 視為 SSOT**，至少核對：Scope/Non-Scope、Decision Lock、CONTRACT（如適用）、Evidence Block、Ubiquitous Language Table、Code Quality Constraints、Rollback / Kill Switch、Final Authority 邊界。
-- 若上游 artifact 缺失或互相矛盾，標記為 `UNVERIFIED` 或 `NO-GO candidate`，並要求補 spec / 補 preflight；**不得用 reviewer 自己的猜測補齊**。
+- 若上游 artifact 缺失或互相矛盾，**BLOCKED** — 不是 `NO-GO candidate`，是硬停。要求補 spec / 補 preflight，回報 PM 等待決策。**不得用 reviewer 自己的猜測補齊**。
+- 若 Phase Registry 顯示任何 Gate 被跳過且無 `WAIVED_BY_PM`，標記為 P0 finding：「Phase skip without PM authorization — violates UGP-2」。
 - Reviewer 的責任是提出 finding 與 recommendation。最終 GO / NO-GO 由 Final Authority 宣告。
+- **P0/P1 self-falsification 需 PM 驗證**：D2/D3 任務中，reviewer 的 P0/P1 findings 和 self-falsification 論點必須提交 PM 確認，不可自行結案。
+> **Universal Gate Protocol**: 審查時必須檢查 Phase Registry 完整性。缺 Gate / 未授權 skip = P0。詳見 Universal Gate Protocol reference。
 
 ---
 
@@ -47,16 +50,16 @@ description: "Adversarial code review skill. Use whenever reviewing code, specs,
 
 ### Case 1: discontinued_status 大小寫（JOIN Key Mismatch）
 
-- **AI reviewer 說**：「D1 adapter 回傳 raw data，code 正確比對 discontinued_status」
-- **實際發生**：D1 存 `'NORMAL'`（大寫），code 比對 `'normal'`（小寫）→ 所有品項誤判為停產
-- **根因**：Adapter 做 raw pass-through，沒有正規化層。test mock 用了 `'normal'`（跟 code 一致），所以 vitest PASS，但跟真實 D1 資料不一致
+- **AI reviewer 說**：「Database adapter 回傳 raw data，code 正確比對 discontinued_status」
+- **實際發生**：Database stores `'NORMAL'`（大寫），code 比對 `'normal'`（小寫）→ 所有品項誤判為停產
+- **根因**：Adapter 做 raw pass-through，沒有正規化層。test mock 用了 `'normal'`（跟 code 一致），所以 vitest PASS，但跟真實 database data不一致
 - **教訓**：**Test mock 的值必須反映真實資料格式，不是用程式碼期望格式。** mock 跟 code 一致 ≠ mock 跟 production data 一致
 
-### Case 2: KV Combo Snapshot vs D1 Raw Data（資料語義混淆）
+### Case 2: KV Combo Snapshot vs Database Raw Data（資料語義混淆）
 
-- **AI reviewer 說**：「D1 path 可以複用現有 KV combo 查詢邏輯」
-- **實際發生**：KV combo 存的是 GAS 預計算好的 materialized view（已含 fair share），D1 存的是 raw stock data → schemaVersion 不匹配 → 回傳 stale 預設值
-- **根因**：同一個欄位名（`availableQty`），在 KV 是 computed output，在 D1 是 raw input。審查者沒分辨「同名不同義」
+- **AI reviewer 說**：「database path 可以複用現有 cache combo 查詢邏輯」
+- **實際發生**：cache combo 存的是 serverless script 預計算好的 materialized view（已含 fair share），Database stores的是 raw stock data → schemaVersion 不匹配 → 回傳 stale 預設值
+- **根因**：同一個欄位名（`availableQty`），在 cache is computed output，在 database is raw input。審查者沒分辨「同名不同義」
 - **教訓**：**同欄位名在不同資料來源可能有完全不同的語義。** 必須追蹤資料從 source → transform → consumer 的完整路徑
 
 ### Case 3: Q2d 誤判（追蹤深度不足）
@@ -70,15 +73,15 @@ description: "Adversarial code review skill. Use whenever reviewing code, specs,
 
 - **AI reviewer 說**：「sync_batch_id 一致性檢查已實作」
 - **實際發生**：code 只 log mismatch，沒有真正 fallback 到 KV（spec 要求 fallback）。log 存在 ≠ 邏輯存在
-- **根因**：`console.warn` 被當成「處理了」，但 warn 後繼續用 D1 結果回覆使用者，完全沒有 fallback 分支
+- **根因**：`console.warn` 被當成「處理了」，但 warn 後繼續用 database result回覆使用者，完全沒有 fallback 分支
 - **教訓**：**「有 log」≠「有處理」。** fallback 路徑必須有 code path 證據（if/else/return/throw），不是只有 log
 
 ### Case 5: KV Edge Cache 不被 KV.put() Invalidate
 
 - **AI reviewer 說**：「更新 KV 值後，下次讀取就會拿到新值」
 - **實際發生**：`cacheTtl: 86400` 的 edge cache 不被 `KV.put()` invalidate。舊值在其他 colo 繼續 serve 24hr
-- **根因**：審查者把 KV 當成強一致性存儲，忽略 Cloudflare KV 的 eventually consistent 特性 + edge cache 獨立於 KV store
-- **教訓**：**平台特性假設必須驗證。** Cloudflare KV、GAS CacheService、LINE API 等都有各自的 consistency model
+- **根因**：審查者把 KV 當成強一致性存儲，忽略 edge key-value store 的 eventually consistent 特性 + edge cache 獨立於 KV store
+- **教訓**：**平台特性假設必須驗證。** edge key-value store、platform cache service、LINE API 等都有各自的 consistency model
 
 ### Case 6: scoringEngine.selectTop3() 不檢查 active 欄位
 
@@ -87,17 +90,17 @@ description: "Adversarial code review skill. Use whenever reviewing code, specs,
 - **根因**：PM 決策文件描述的是「應該做的事」，不是「已經做的事」
 - **教訓**：**PM 決策文件 ≠ code ground truth。** 永遠要用 code 驗證文件，不是用文件驗證 code
 
-### Case 7: vitest Mock D1 的語義陷阱
+### Case 7: vitest Mock database的語義陷阱
 
 - **AI reviewer 說**：「vitest 全 PASS，ON CONFLICT 邏輯正確」
-- **實際發生**：vitest mock D1 只驗 JS 邏輯，不跑真實 SQL。PR#30 把 INSERT 改成 `ON CONFLICT(user_id) DO NOTHING`，mock PASS，但 production D1 的 UNIQUE constraint 是 `(code, role)` 不是 `(user_id)` → 資料靜默丟失
-- **教訓**：**vitest mock 不驗 SQL 語義。** `ON CONFLICT` / `INSERT` / `UPDATE` / `DELETE` 的邏輯結構變更，必須拿 production schema（`PRAGMA table_info` + `PRAGMA index_list`）交叉比對，不能只信 mock PASS
+- **實際發生**：vitest mock database 只驗 JS 邏輯，不跑真實 SQL。PR#30 把 INSERT 改成 `ON CONFLICT(user_id) DO NOTHING`，mock PASS，但 production database的 UNIQUE constraint 是 `(code, role)` 不是 `(user_id)` → 資料靜默丟失
+- **教訓**：**vitest mock 不驗 SQL 語義。** `ON CONFLICT` / `INSERT` / `UPDATE` / `DELETE` 的邏輯結構變更，必須拿 production schema（production schema inspection）交叉比對，不能只信 mock PASS
 
-### Case 8: GAS Ghost Code
+### Case 8: Serverless Script Ghost Code
 
-- **AI reviewer 說**：「GAS 函式已更新，重新執行即可」
-- **實際發生**：GAS editor 畫面顯示新 code，但執行環境跑的是 cached 舊版。`clasp push` 沒加 `--force` 被 skip，或 push 成功但 runtime 仍用舊版
-- **教訓**：**GAS 部署狀態不可信。** 解法：`99_Hotfix` 檔案（字母序最後載入，強制覆蓋函式定義）。驗證方式：在函式開頭加 `Logger.log('v2_TIMESTAMP')` 確認 runtime 版本
+- **AI reviewer 說**：「Script function已更新，重新執行即可」
+- **實際發生**：Script editor 畫面顯示新 code，但執行環境跑的是 cached 舊版。`deploy push` 沒加 `--force` 被 skip，或 push 成功但 runtime 仍用舊版
+- **教訓**：**Script deployment狀態不可信。** 解法：`Hotfix` 檔案（字母序最後載入，強制覆蓋函式定義）。驗證方式：在函式開頭加 `Logger.log('v2_TIMESTAMP')` 確認 runtime 版本
 
 ### Case 9: PowerShell UTF-8 Corruption
 
@@ -105,10 +108,10 @@ description: "Adversarial code review skill. Use whenever reviewing code, specs,
 - **實際發生**：`-replace` + `Set-Content` 預設 encoding 不是 UTF-8，中文字元被破壞成 mojibake
 - **教訓**：**任何涉及中文字元的檔案操作，禁用 PowerShell inline 指令。** 必須用 file-based Node.js script（`fs.readFileSync / writeFileSync` with `'utf8'`）
 
-### Case 10: GAS Date toISOString() UTC 偏移
+### Case 10: Serverless Script Date toISOString() UTC 偏移
 
 - **AI reviewer 說**：「`val.toISOString().split('T')[0]` 可以把 Date 轉成 YYYY-MM-DD」
-- **實際發生**：GAS `getValues()` 回傳的 Date 是 Asia/Taipei 時區（UTC+8）。`toISOString()` 轉 UTC，midnight `2026-02-01 00:00 +08:00` 變成 `2026-01-31T16:00:00.000Z`，`.split('T')[0]` = `2026-01-31` — **日期差一天**
+- **實際發生**：The platform `getValues()` 回傳的 Date 是 Asia/Taipei 時區（UTC+8）。`toISOString()` 轉 UTC，midnight `2026-02-01 00:00 +08:00` 變成 `2026-01-31T16:00:00.000Z`，`.split('T')[0]` = `2026-01-31` — **日期差一天**
 - **Subagent review 說**：「`instanceof Date` is standard pattern, low risk」→ 標 🟡 放過
 - **根因**：reviewer 只看了 type check 是否正確，沒追問「轉換後的值對不對」。平台時區行為是隱性假設
 - **教訓**：**Date → string 必須用 timezone-aware 方法（如 `Utilities.formatDate(date, 'Asia/Taipei', 'yyyy-MM-dd')`），禁用 `toISOString()`。** 審查時看到 `toISOString()` 就要追問：「這個 Date 是哪個時區？轉 UTC 後值還對嗎？」
@@ -187,8 +190,8 @@ description: "Adversarial code review skill. Use whenever reviewing code, specs,
 | 3 | 數值的單位和精度是否一致？ | 整數 vs 浮點、TWD vs USD |
 | 4 | 時間欄位的格式和時區？ | ISO 8601 + UTC vs Asia/Taipei |
 | 5 | Mock 的值是否反映真實資料格式？ | Case 1: mock='normal' 但 D1='NORMAL' |
-| 6 | 計算公式是否跟 spec / GAS 端一致？ | GT-22 fair share 手算驗證 |
-| 7 | GAS 部署後 runtime 是否真的跑新版？ | Case 8: editor 顯示新 code 但 runtime 跑 cached 舊版 |
+| 6 | 計算公式是否跟 spec / server-side script一致？ | GT-22 fair share 手算驗證 |
+| 7 | Script deployment後 runtime 是否真的跑新版？ | Case 8: editor 顯示新 code 但 runtime 跑 cached 舊版 |
 
 ### CL-4: Fallback / Error Handling
 
@@ -197,7 +200,7 @@ description: "Adversarial code review skill. Use whenever reviewing code, specs,
 | 1 | Error path 是否有具體處理（不是只 log）？ | Case 4: log mismatch but no fallback |
 | 2 | fallback 後的回傳值 caller 有 null check？ | fallback 回傳 null 但 caller 沒 null check |
 | 3 | try-catch 是否 swallow 了重要錯誤？ | `catch(e) {}` 靜默吞錯 |
-| 4 | timeout 是否有上限？超時後的行為？ | LINE reply 5 秒限制、GAS 6 分鐘限制 |
+| 4 | timeout 是否有上限？超時後的行為？ | LINE reply 5 秒限制、serverless 6-minute limit |
 | 5 | Circuit breaker / kill switch 是否可行使？ | KV key 存在 ≠ code 有讀取和判斷邏輯 |
 | 6 | Rollback 指令是否可在 < 60 秒內執行？ | `wrangler kv key put` 秒級 vs code deploy 分鐘級 |
 | 7 | Bug 已修，但是否留下 regression gate？若沒有，是否有合理豁免？ | HR-8: 修了但沒 gate = 只是人類短期記住，gate 要加在根因層 |
@@ -210,7 +213,7 @@ description: "Adversarial code review skill. Use whenever reviewing code, specs,
 | 2 | Feature flag 的生命週期移除是否有 spec？ | flag 從 KV→D1 切換但沒有 rollback 路徑 |
 | 3 | 防禦機制在依賴被拔後是否仍有效？ | Phase 5 後只剩 L6 oracle |
 | 4 | test mock 是否在 schema 變更後 stale？ | DDL 加了欄位但 test fixture 沒更新 |
-| 5 | GAS 端的 code 跟 CFW 端是否同步更新？ | 一邊改了 API contract，另一邊沒跟 |
+| 5 | Server-side script code vs worker-side code是否同步更新？ | 一邊改了 API contract，另一邊沒跟 |
 
 ---
 
@@ -284,7 +287,7 @@ description: "Adversarial code review skill. Use whenever reviewing code, specs,
 ### AP-2: 信任 mock 等於信任 production
 
 - :x: 「vitest 全 PASS 所以邏輯正確」
-- :white_check_mark: 「vitest PASS 證明 code 跟 mock 一致。但需要驗證 mock 的值是否反映 production D1/KV 的實際格式（Case 1 教訓）。」
+- :white_check_mark: 「vitest PASS 證明 code 跟 mock 一致。但需要驗證 mock 的值是否反映 production database/KV 的實際格式（Case 1 教訓）。」
 
 ### AP-3: 用文件驗證 code（因果反置）
 
@@ -294,7 +297,7 @@ description: "Adversarial code review skill. Use whenever reviewing code, specs,
 ### AP-4: Log 存在 = 處理存在
 
 - :x: 「有 `console.warn('batch_id mismatch')` 所以有處理」
-- :white_check_mark: 「`console.warn` 在 L55，但 L56 繼續用 D1 結果回覆。沒有 if/else 分支走 fallback KV path。」（Case 4 教訓）
+- :white_check_mark: 「`console.warn` 在 L55，但 L56 繼續用 database result回覆。沒有 if/else 分支走 fallback KV path。」（Case 4 教訓）
 
 ### AP-5: 停在第一層就下結論
 
@@ -304,7 +307,7 @@ description: "Adversarial code review skill. Use whenever reviewing code, specs,
 ### AP-6: 平台假設不驗證
 
 - :x: 「KV.put 後下次讀取就是新值」
-- :white_check_mark: 「Cloudflare KV 是 eventually consistent。cacheTtl=86400 的 edge cache 不被 KV.put invalidate（LD-17 incident）。需要 versioned key prefix 或短 TTL 過渡。」（Case 5 教訓）
+- :white_check_mark: 「Cloudflare cache is eventually consistent。cacheTtl=86400 的 edge cache 不被 KV.put invalidate（LD-17 incident）。需要 versioned key prefix 或短 TTL 過渡。」（Case 5 教訓）
 
 ---
 
@@ -425,7 +428,7 @@ description: "Adversarial code review skill. Use whenever reviewing code, specs,
 |---|------------|---------|--------------|
 | 1 | [e.g. `npx vitest run src/features/combo.test.ts`] | [PASS/FAIL + 關鍵數字] | [證明什麼 / 不能證明什麼] |
 | 2 | [e.g. `grep -rn 'ON CONFLICT' src/`] | [找到 N 處，列出] | [跟 production schema 對齊 / 不對齊] |
-| 3 | [e.g. `wrangler d1 execute --remote "PRAGMA index_list('users')"`] | [constraint 名稱] | [跟 code 一致 / 不一致] |
+| 3 | [e.g. `database CLI query --remote "PRAGMA index_list('users')"`] | [constraint 名稱] | [跟 code 一致 / 不一致] |
 
 若無法執行（例如只有貼文、無 repo / shell access），填「N/A — 建議 PM 手動執行以下指令：[指令]」。
 

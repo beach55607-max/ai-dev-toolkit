@@ -65,10 +65,16 @@ Is a protected surface touched? (includes: information output, new data fields,
   cross-module 3+ files, permission/security, database mutations)
   NO and affected files ≤ 3 -> D0. Proceed to preflight.
   YES -> Does it cross a contract boundary?
-    NO  -> D1. Confirm assumption, owner, rollback. Then preflight.
+    NO  -> D1. State assumption, owner, rollback to PM. Wait for PM ACK.
     YES -> Does it involve auth, schema migration, destructive writes, or permissions?
-      NO  -> D2. Write decision note and validation plan. Then preflight.
-      YES -> D3. Get user confirmation. Write decision note. Then preflight.
+      NO  -> D2. Write decision note and validation plan. Wait for PM ACK.
+      YES -> D3. Get user confirmation. Write decision note. Wait for PM ACK.
+
+After classification:
+  -> Present D-level + evidence to PM.
+  -> PM confirms (APPROVED) or overrides (OVERRIDE to D[N]).
+  -> Do NOT proceed to preflight until PM ACK received.
+  -> See Universal Gate Protocol for Gate G0 format.
 ```
 
 ## Implementation Plan

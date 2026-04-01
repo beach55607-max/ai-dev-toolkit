@@ -71,6 +71,20 @@ If multiple systems have conflicting local rules, rollout constraints, or valida
 If no adapter matches cleanly, read [fallback-adapter.md](./references/fallback-adapter.md), apply the preflight protocol directly, state the assumed system type, and prefer the system that owns validation, persistence, auth, or runtime policy.
 Treat repeated no-match cases as a signal to create a new adapter later, not as a reason to skip boundary analysis now.
 
+## Universal Gate Protocol (UGP)
+
+Read [universal-gate-protocol.md](./references/universal-gate-protocol.md) for the full 10-Gate closed-loop governance system (G-1 Discovery → G6 Close-out).
+
+Key rules for Codex:
+
+- **Phase transitions require PM ACK.** Do not proceed from one Gate to the next without PM APPROVED / REVISE / REJECT.
+- **D-level classification must be PM-confirmed.** Agent proposes D-level + evidence, PM confirms or overrides.
+- **Phase skipping is a stop condition.** Skipping any Gate without `WAIVED_BY_PM(reason)` is never acceptable.
+- **D0/D1 self-certify allowed.** Low-risk Gates can use `SELF_CERTIFIED(evidence)` with mechanical evidence; PM reviews at G6.
+- **D2/D3 every Gate stops.** No self-certify for cross-boundary or high-risk tasks.
+- **Codex unavailable = BLOCKED to PM.** Never silently skip Codex review; report to PM and wait for decision.
+- **Phase Registry required in close-out.** 10 Gates, each with status + evidence + PM ACK.
+
 ## Handoff To Executable Spec
 
 If the task will be handed to an AI or human for execution, or preflight identifies D1+ / protected surfaces / cross-boundary contracts, convert the preflight result into a downstream executable spec before coding.

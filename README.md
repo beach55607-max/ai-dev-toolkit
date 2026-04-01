@@ -4,23 +4,25 @@
 
 核心哲學：**修 bug 不算完成，必須留下下次能擋住同類錯誤的 gate。** 每一次錯誤都應該沉澱成新的防線，讓系統越做越強。
 
-三套 skill 覆蓋 AI 輔助開發的完整生命週期，並形成閉環——驗證階段的發現會回流成 gate，讓下一輪的 preflight、spec、review 直接擋住同類問題：
+四套 skill 覆蓋 AI 輔助開發的完整生命週期——從發想到交付，每一步都有 stakeholder checkpoint，形成閉環：
 
 ```text
-  決定            →        規劃          →       施工         →       驗證
- ┌──────────────┐   ┌──────────────────┐   ┌──────────────┐   ┌──────────────────┐
- │ Boundary-     │   │ Executable Spec  │   │ (你的 AI     │   │ Adversarial Code │
- │ First         │──>│ Planning         │──>│  agent)      │──>│ Review           │
- │ Engineering   │   │                  │   │              │   │                  │
- └──────────────┘   └──────────────────┘   └──────────────┘   └──────────────────┘
-  誰負責？           要做什麼？               改 code            AI 做對了嗎？
-  什麼會壞？         驗收標準是什麼？                            用證據證明。
-  怎麼回滾？         不做什麼？
+  發想            →     決定            →        規劃          →       施工         →       驗證
+ ┌──────────────┐  ┌──────────────┐   ┌──────────────────┐   ┌──────────────┐   ┌──────────────────┐
+ │ Brainstorming │  │ Boundary-     │   │ Executable Spec  │   │ (你的 AI     │   │ Adversarial Code │
+ │ Capture       │─>│ First         │──>│ Planning         │──>│  agent)      │──>│ Review           │
+ │ (cw-*)        │  │ Engineering   │   │                  │   │              │   │                  │
+ └──────────────┘  └──────────────┘   └──────────────────┘   └──────────────┘   └──────────────────┘
+  什麼方向？        誰負責？             要做什麼？               改 code            AI 做對了嗎？
+  合理嗎？          什麼會壞？           驗收標準是什麼？                            用證據證明。
+  資料從哪來？      怎麼回滾？           不做什麼？
 
-       ▲                                                            │
-       │              Regression Gate 回饋迴路                       │
-       └────────────── 驗證 / Incident 發現 → 沉澱為新 gate ────────┘
+       ▲                                                                              │
+       │                    Regression Gate 回饋迴路                                    │
+       └────────────────── 驗證 / Incident 發現 → 沉澱為新 gate ──────────────────────┘
 ```
+
+**v2025.04.01 新增**: Brainstorming Capture skill（含 Discovery Gate）— 讓 AI 在動手前先把方向想清楚，stakeholder 確認後才進入工程。
 
 ---
 
@@ -31,6 +33,11 @@
 │
 ├─ 是瑣碎修改？（typo、comment、排版）
 │  └─ 直接做，不需要 skill。(D0)
+│
+├─ 是新功能或新產品？方向還沒確定？
+│  └─ 是 → 先用 Brainstorming Capture
+│         多方向發想，stakeholder 確認方向後再進工程。
+│         如果概念已確定，可跳過直接進 Boundary-First 或 Spec Planning。
 │
 ├─ 會跨 repo、跨服務、或改到 contract？
 │  └─ 是 → 先用 Boundary-First
@@ -58,8 +65,10 @@
 | 場景 | 使用哪幾套 | 為什麼 |
 |------|-----------|--------|
 | 小 bug fix，單 repo | Adversarial Review (L1 Fast) | 驗證修復正確 + 確認 regression gate (HR-8) |
-| 新功能，單 repo | Spec Planning → Adversarial Review (L2) | 先規劃再驗證 |
+| 新功能，方向未定 | Brainstorming → Spec Planning → Adversarial Review (L2) | 先發想再規劃再驗證 |
+| 新功能，方向已定 | Spec Planning → Adversarial Review (L2) | 先規劃再驗證 |
 | Schema 遷移，跨 repo | Boundary-First → Spec Planning → Adversarial Review (L3) | 完整生命週期 |
+| 全新產品，跨 repo | Brainstorming → Boundary-First → Spec Planning → Adversarial Review (L3) | 完整四層 |
 | 審查別人的 PR | Adversarial Review (L2 Code Mode) | 用證據驗證 |
 | 審查設計文件 | Adversarial Review (L2 Spec Mode) | 檢查完整性和一致性 |
 | 部署前驗證 | Adversarial Review (L3 Release Gate) | 完整 execution-layer audit |
@@ -153,7 +162,9 @@ Prompt: "Review this PR using adversarial-code-review.
 
 ---
 
-## 這個 repo 有三套 skill
+## 這個 repo 有四套 skill
+
+**Skill 0: Brainstorming Capture (cw-brainstorming)** `v2025.04.01 NEW` — 讓 AI agent 在動手前先把方向想清楚。用最小紀錄捕捉發想，不過度展開、不混淆來源、不限制創意自由。產品/功能任務含 Discovery Gate (G-1)，stakeholder 確認方向後才能進入工程。
 
 **Skill 1: Boundary-First Engineering** — 讓 AI agent 在改 code 之前，先把 owner、boundary、contract、rollback 想清楚。適合多 repo、跨服務、跨 runtime 的工程任務。
 
@@ -161,15 +172,16 @@ Prompt: "Review this PR using adversarial-code-review.
 
 **Skill 3: Adversarial Code Review** — 讓 AI reviewer 用證偽法審查 code 和規格書，而不是表面確認「看起來對」。從 30+ 個 AI reviewer 真實判斷錯誤的案例中提煉出方法論。包含 13 個真實攔截案例的 before/after 對照。
 
-### 為什麼需要這三套
+### 為什麼需要這四套
 
 因為 AI coding 最昂貴的失敗，不是語法錯誤：
 
+- **Brainstorming Capture 防的是**：AI 跳過發想直接動工、stakeholder 沒確認方向就寫 code、功能缺陷到 deploy 後才發現
 - **Boundary-First 防的是**：owner 判錯、contract 判錯、rollback 沒想、validation 驗錯地方
 - **Spec Planning 防的是**：spec 假完整、AI 超出 scope 自主決策、架構方向選錯但 gate 全過、AI 幻覺（沒讀真實資料就動手）、bug 修了但沒留防線
 - **Adversarial Review 防的是**：AI reviewer 橡皮圖章（「看起來對」就 PASS）、mock PASS ≠ production PASS、log 存在 ≠ 處理存在、平台特性假設不驗證
 
-這三套可以獨立使用，也可以組合：先用 Boundary-First 判斷 owner 和風險，用 Spec Planning 寫出可執行的規格書，最後用 Adversarial Review 驗證 AI 的實作。
+這四套可以獨立使用，也可以組合。完整四層流程：先用 Brainstorming 發想方向 → Boundary-First 判斷 owner 和風險 → Spec Planning 寫出可執行的規格書 → Adversarial Review 驗證 AI 的實作。入口由 stakeholder 決定，可以從任一層開始。
 
 ### 適合誰
 
@@ -246,6 +258,24 @@ You have a task
 
 ## Skill Packs
 
+### 0. Brainstorming Capture (cw-brainstorming) `v2025.04.01 NEW`
+
+A brainstorming capture skill for creative and product ideation. Records ideas with minimal elaboration, preserves creative freedom, and prevents AI agents from skipping the ideation phase.
+
+- **Agent-agnostic** — `cw-brainstorming/` (works with Claude Code, Codex, or any LLM)
+
+**When to use:** New feature ideation, product direction exploration, UX concept brainstorming, story/worldbuilding exploration — any open-ended "what should we build?" discussion.
+**When NOT to use:** Direction is already decided — go straight to Spec Planning.
+
+**Key capabilities:**
+
+- Minimal capture with source tagging (`<AI>` for AI suggestions, `<hidden>` for internal-only info)
+- Preserves vagueness — doesn't resolve contradictions or force premature decisions
+- Discovery Gate (G-1) for product/feature tasks — stakeholder checkpoint before engineering begins
+- Dual-path brainstorming to avoid homogeneous blind spots
+- Composable with other skills (brainstorm → evaluate → spec → review)
+- Anti-pattern prevention: blocks AI from auto-sliding from ideation into implementation
+
 ### 1. Boundary-First Multi-Repo Engineering
 
 A boundary-first engineering workflow for multi-repo, multi-runtime, and contract-sensitive tasks.
@@ -259,10 +289,13 @@ A boundary-first engineering workflow for multi-repo, multi-runtime, and contrac
 **Key capabilities:**
 
 - D0-D3 severity classification with decision gate
+- **Universal Gate Protocol (UGP)** — 10-Gate closed-loop with stakeholder checkpoints `v2025.04.01 NEW`
+- **Proportionality principle** — D0/D1 low-risk gates can self-certify; D2/D3 every gate stops `v2025.04.01 NEW`
+- **Anti-hallucination design** — legitimate fast paths prevent AI from fabricating evidence `v2025.04.01 NEW`
 - Owner / consumer identification and cross-boundary contract model
 - Adapter selection (5 types + fallback)
 - Mechanical verification depth ladder
-- Structured close-out with mandatory rollback stance
+- Structured close-out with mandatory rollback stance + **Phase Registry (10 Gates)** `v2025.04.01 NEW`
 - Maker-checker for D2/D3
 
 ### 2. Executable Spec Planning
@@ -288,7 +321,11 @@ A planning workflow that turns fuzzy requirements into executable specifications
 - Bug-to-Gate Closure (HR-8) — every confirmed bug must leave a regression gate
 - 31-check completeness guard (Layer A manual; Layer B executable scripts concept included, scripts not bundled in public pack)
 - Risk escalation triggers (permission/DB mutations/fan-in/routing/prior incidents)
-- Governance audit (7 items) in close-out reports
+- Governance audit (8 items) in close-out reports — **including GA-8 Phase Compliance** `v2025.04.01 NEW`
+- **HR-9 (Governance Audit mandatory)** and **HR-10 (Phase transitions require stakeholder ACK)** `v2025.04.01 NEW`
+- **10-Gate Phase Registry** in close-out — every gate tracked with status + evidence + stakeholder ACK `v2025.04.01 NEW`
+- **7 anti-patterns** with real case studies (including AP-7 Phase Skip) `v2025.04.01 NEW`
+- **Full Review Pipeline** (`full-review.md`) — dual AI review with fail-closed Codex handling `v2025.04.01 NEW`
 
 ### 3. Adversarial Code Review
 
@@ -317,6 +354,12 @@ A falsification-first code and spec review skill that forces AI reviewers to pro
 ---
 
 ## Quick Start
+
+### Brainstorming Capture `NEW`
+
+**Claude Code:** Copy `cw-brainstorming/` to `.claude/skills/cw-brainstorming/`.
+
+**Codex / ChatGPT / any LLM:** Paste `SKILL.md` content at the start of your brainstorming conversation.
 
 ### Boundary-First Engineering
 
@@ -447,11 +490,17 @@ See [adversarial-code-review/examples/real-world-catches.md](adversarial-code-re
 ```text
 skill_shared/
 ├── README.md                                           <- You are here
+├── cw-brainstorming/                                    <- Brainstorming capture (NEW v2025.04.01)
+│   └── SKILL.md
 ├── codex/boundary-first-multi-repo-engineering/        <- Codex edition
-├── claude-code/boundary-first-multi-repo-engineering/   <- Claude Code edition
-│   ├── CLAUDE.md                                        <- For pasting into project CLAUDE.md
-│   ├── SKILL.md                                         <- For uploading as Claude Code skill
+│   ├── SKILL.md
 │   └── references/
+│       └── universal-gate-protocol.md                   <- UGP (NEW v2025.04.01)
+├── claude-code/boundary-first-multi-repo-engineering/   <- Claude Code edition
+│   ├── CLAUDE.md
+│   ├── SKILL.md
+│   └── references/
+│       └── universal-gate-protocol.md                   <- UGP (NEW v2025.04.01)
 ├── executable-spec-planning/                            <- Agent-agnostic planning
 │   ├── SKILL.md
 │   └── references/
@@ -462,6 +511,7 @@ skill_shared/
 │       ├── checker-review-prompt-template.md
 │       ├── contract-triple-template.md
 │       ├── close-out-template.md
+│       ├── anti-patterns.md                             <- 7 failure modes (NEW v2025.04.01)
 │       ├── spec-review-checklist.md
 │       ├── executable-spec-criteria.md
 │       └── code-quality.md
@@ -469,6 +519,7 @@ skill_shared/
     ├── README.md
     ├── SKILL.md
     ├── adversarial-review.md
+    ├── full-review.md                                   <- Dual review pipeline (NEW v2025.04.01)
     ├── references/
     │   └── calibration-cases.md
     └── examples/
@@ -476,6 +527,44 @@ skill_shared/
         ├── example-spec-review.md
         └── real-world-catches.md
 ```
+
+---
+
+## Version History
+
+### v2025.04.01 — Universal Gate Protocol + Brainstorming Capture
+
+基於一個真實案例的 900+ 則訊息審計：AI agent 在功能開發中自行跳過概念評估和設計審查階段，導致 7 輪 stakeholder 手動迭代（其中 4 輪本應被跳過的階段攔住）。根因：pipeline 是開環的 — agent 在每一步都可以選「對自己最快」的路，沒有機制要求它停下來讓 stakeholder 在成本最低的時候介入。
+
+**新增 Skill:**
+- **Brainstorming Capture (cw-brainstorming)** — 發想層 skill，含 Discovery Gate (G-1)，防止 AI 跳過發想直接動工
+
+**新增 Protocol:**
+- **Universal Gate Protocol (UGP)** — 10 Gate 閉環（G-1 Discovery → G6 Close-out），每步都有 stakeholder checkpoint
+- **比例原則** — D0/D1 低風險 Gate 可自證（防幻覺），D2/D3 每步停等
+- **5 狀態制** — PASS / SELF_CERTIFIED(evidence) / BLOCKED / WAIVED_BY_PM(reason) / SKIPPED_BY_PM
+- **Phase Registry** — close-out 必填 10 Gate 完整紀錄，缺項 = rejected
+
+**新增 Hard Rules:**
+- **HR-9** — Governance Audit (含 GA-8 Phase Compliance) mandatory
+- **HR-10** — Phase transitions require stakeholder ACK
+
+**新增 Anti-Pattern:**
+- **AP-7 Phase Skip** — agent 自行跳過 workflow phase 的失敗模式
+
+**新增 Review Pipeline:**
+- **Full Review** (`full-review.md`) — Claude + Codex 雙路審查 + fail-closed Codex handling
+
+**修改:**
+- 所有 SKILL.md 加入 UGP gate 引用
+- Close-out template 加入 Phase Registry + GA-8
+- Decision gate 加入 stakeholder ACK 步驟
+- Constitution 加入 phase transition + phase skipping hard rules
+- D0 Architecture Fit Check 從「可跳過」改為「需一行聲明」
+
+### v2025.03.30 — Initial Release
+
+三套核心 skill：Boundary-First Engineering + Executable Spec Planning + Adversarial Code Review。
 
 ---
 

@@ -17,12 +17,24 @@ If local rules conflict with this workflow, follow local rules and explain the c
 ## Workflow Stages
 
 ```text
-1. Classify    → What kind of change is this?
-2. Decide      → How much ceremony? (D0-D3)
-3. Plan        → Write implementation plan (D1+)
-4. Execute     → Make changes, guided by adapter
-5. Verify      → Run mechanical verification at matched depth
-6. Close out   → Structured summary with evidence
+ Pre-Engineering (entry point decided by PM, earlier stages may be skipped)
+ G-1. Discover     → Multi-direction brainstorming
+ G-2. Critique     → Concept evaluation: business/UX/completeness/technical/data
+ G-3. Canonicalize → Finalize as canonical spec / SSOT
+
+ Engineering (once entered, no skipping allowed)
+ 0. Classify    → What kind of change is this?             [G0]
+ 1. Arch Fit    → Architecture assumption + data layer     [G1]
+ 2. Spec Lock   → Write spec, Checker review, PM GO        [G2]
+ 3. Review Mode → Lock Mode A/B, only upgrade allowed      [G3]
+ 4. Execute     → Make changes, run mechanical gate         [G4]
+ 5. Review      → Adversarial review (full-review/adv-rev) [G5]
+ 6. Close out   → Structured summary + Phase Registry      [G6]
+
+ D2/D3: every step must stop and wait for PM: APPROVED / REVISE / REJECT
+ D0/D1: G0+G6 must stop for PM; low-risk Gates may use SELF_CERTIFIED(evidence)
+ D1 additional mandatory stops: G2(Spec Lock) + G5(Review)
+ See Universal Gate Protocol reference for proportionality table.
 ```
 
 ## Step 0: Decision Gate
@@ -31,12 +43,16 @@ Decision Gate decides **how much ceremony is required**. Preflight (Step 1) deci
 
 Before preflight, classify the change severity. Read `references/decision-gate.md` for the full decision tree.
 
-- **D0** (local, no protected surface, no information output / new data fields / cross-module / permission-security / database mutations, ≤ 3 files): proceed directly to preflight. Step 2b (Query Actual Data) + Evidence Block still required.
-- **D1** (single-repo protected surface): confirm assumption, owner, rollback stance. Then preflight.
-- **D2** (cross-boundary contract): write decision note, producer/consumer impact, validation plan. Then preflight.
+- **D0** (local, no protected surface, no information output / new data fields / cross-module / permission-security / database mutations, ≤ 3 files): proceed directly to preflight. Step 2b (Query Actual Data) + Evidence Block still required. Architecture Fit Check requires a one-line statement (cannot be fully skipped).
+- **D1** (single-repo protected surface): state assumption, owner, rollback stance **to PM. Wait for PM ACK** before preflight.
+- **D2** (cross-boundary contract): write decision note, producer/consumer impact, validation plan. **Wait for PM ACK** before preflight.
 - **D3** (auth/signature, schema migration, destructive write, permissions): get user confirmation first. Maker-checker required at close-out.
 
-For trivial edits with no protected surface (typo fixes, comment updates, formatting), D0 preflight is sufficient. D0 still requires Step 2b (read source + query actual data) and Evidence Block. Do not over-apply ceremony to changes that carry no boundary, contract, or security risk.
+**All D-level classifications must be presented to PM for confirmation.** Agent proposes D-level + evidence, PM responds APPROVED / OVERRIDE. See Universal Gate Protocol G0.
+
+For trivial edits with no protected surface (typo fixes, comment updates, formatting), D0 preflight is sufficient. D0 still requires Step 2b (read source + query actual data), Evidence Block, and Architecture Fit Check one-line statement. Do not over-apply ceremony to changes that carry no boundary, contract, or security risk.
+
+**New features / new products**: If the task involves new feature development, it must start from G-1 Discovery or G-2 Concept Critique (entry point decided by PM). Do not skip the pre-engineering phase and jump directly into engineering. See Universal Gate Protocol reference.
 
 **No source guessing.** If source files, local rules, or nearest tests were not read, do not assume implementation details.
 
@@ -78,6 +94,31 @@ If the task spans multiple systems, also read `references/cross-boundary-contrac
 - Do not pretend caller-side validation is enough when a producer or shared contract also changes.
 - **Bug-to-Gate Closure.** Any confirmed and replayable bug must leave behind a maintained regression gate at the narrowest effective layer. If no executable gate is currently feasible, close-out must record why, the temporary control, the owner, and the remediation date.
 
+## Step 2.5: Adversarial Review (before PR)
+
+After gate passes, before push/PR, adversarial review is mandatory. Two modes:
+
+### Mode A: Full Review (dual review)
+
+Run both a Claude subagent and a Codex CLI review independently, then consolidate and fix.
+
+### Mode B: Single Review (Claude only)
+
+Run Claude subagent review only. **Mode B requires PM authorization (G3 Review Mode Lock).**
+
+- D0 no protected surface: Mode B acceptable, but needs PM ACK
+- D1 protected surface: Mode A is default, downgrade requires `WAIVED_BY_PM(reason)`
+- D2/D3: Mode A forced, no downgrade allowed
+
+Agent must explain why Mode B is chosen (e.g., Codex unavailable), PM confirms before proceeding.
+
+### Rules
+
+- **Do not skip.** Gate verifies syntax and structure; adversarial review verifies semantics and contract correctness. Both are required.
+- Review findings at **P0/P1 must be fixed before push**. P2 may be recorded as residual risk.
+- When replacing existing functionality, read the original source code first, extract key formulas and data flow as contract anchors.
+- After implementation, verify against the acceptance checklist item by item.
+
 ## Step 3: Close-Out
 
 Use this template:
@@ -91,8 +132,11 @@ Validation run: [commands executed and results]
 Validation skipped: [commands not run and why]
 Rollback stance: [rollback path, fallback, or blast-radius control]
 Maker-checker evidence: [n/a for D0/D1, or user confirmation / second review / waiver]
+Phases skipped: [list with PM authorization reference for each, or "none"]
 Residual risk: [unknowns or items that need future attention]
 ```
+
+**Phase Registry (mandatory)**: Every task close-out must include a complete Phase Registry (all 10 Gates listed). See Universal Gate Protocol reference for format. Missing entries = close-out rejected.
 
 For D2/D3: confirm that both sides were validated and that maker-checker review was completed or escalated.
 
@@ -100,6 +144,7 @@ If a stop-condition surface was touched and executable verification is unavailab
 
 ## References
 
+- `references/universal-gate-protocol.md` -- **Universal Gate Protocol: 10-Gate closed loop (G-1 to G6)**
 - `references/decision-gate.md` -- D0-D3 severity classification
 - `references/implementation-plan-template.md` -- required plan format for D1/D2/D3
 - `references/constitution.md` -- authority order and protected surfaces (SSOT)

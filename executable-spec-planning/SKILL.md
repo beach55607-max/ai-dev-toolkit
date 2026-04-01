@@ -41,7 +41,8 @@ D0 applies only when NONE of the "When to Use" triggers #1 (information output),
 - **No database mutation changes** — not touching INSERT/UPDATE/DELETE logic
 - **Affected files ≤ 3** — blast radius is small and obvious
 
-**D0 may skip**: CONTRACT triple / Architecture Fit Check / independent Checker loop (HR-2 exempted for D0).
+**D0 may skip**: CONTRACT triple / independent Checker loop (HR-2 exempted for D0).
+**D0 must not fully skip**: Architecture Fit Check requires a one-line statement: "Architecture assumption: [X]. No new architecture needed because [Y]."
 **D0 still required**: Step 2b (Query Actual Data) + Evidence Block + Scope/Non-Scope + Phase breakdown + PASS/FAIL criteria + Rollback.
 
 > After Step 2b, write simplified spec → run `gate:quick` (= references/gate-quick-d0.md) → implement → Final Authority sign-off → close-out.
@@ -52,7 +53,15 @@ D0 applies only when NONE of the "When to Use" triggers #1 (information output),
 ## Core Flow
 
 ```
+Pre-Engineering Gates (entry point decided by stakeholder, see Universal Gate Protocol):
+  G-1: Discovery — brainstorming multi-direction ideas → PM APPROVED
+  G-2: Concept Critique — business/UX/completeness/technical/data evaluation → PM APPROVED
+  G-3: Canonicalize — finalize as canonical spec / SSOT → PM APPROVED
+
+Engineering Gates (once entered, no skipping allowed):
+
 Step 1: Stakeholder gives requirement (fuzzy or structured)
+        If new feature → stakeholder decides entry point (typically G-1 or G-2)
          ↓
 Step 2: Read project context
         Cross-reference existing architecture
@@ -67,9 +76,11 @@ Step 2b: Query Actual Data（MANDATORY — do not skip）
            No DB: query relevant API / config / env actual values
          - Print results, confirm with stakeholder before proceeding
          ↓
-Step 3: Architecture Fit Check (BEFORE writing any spec)
+Step 3: Architecture Fit Check (BEFORE writing any spec) [Gate G1]
         → Does the architectural assumption hold for this use case?
-        → If uncertain, escalate to stakeholder before continuing
+        → D0: one-line statement required (not auto-exempt)
+        → D1+: full Architecture Fit Check artifact
+        → Present to PM. STOP until PM APPROVED.
          ↓
 Step 4: Produce Spec v1
         Use: references/spec-template.md
@@ -77,9 +88,19 @@ Step 4: Produce Spec v1
         If information output OR new data fields/sources: add CONTRACT triple
         Run: references/completeness-guard.md
          ↓
-Step 5: Send to independent Checker (different AI or person)
-        Use: references/checker-review-prompt-template.md
-        Include calibration test if high-risk (see trust-calibration guide (not in public pack))
+Step 4.5: Present Spec to PM (Final Authority) [Gate G2 — Spec Lock]
+          → PM reviews scope, decision locks, architecture
+          → D2/D3: STOP until PM APPROVED (= GO for implementation)
+          → D0: SELF_CERTIFIED(evidence) allowed, PM reviews at G6
+          → D1: STOP until PM APPROVED (G2 is mandatory stop for D1)
+         ↓
+Step 5: Lock Review Mode [Gate G3 — Review Mode Lock]
+        → D0: Mode B OK with PM ACK. D1: Mode A default. D2/D3: Mode A forced.
+        → D0/D1: SELF_CERTIFIED(evidence) allowed
+         ↓
+Step 5.5: Send to independent Checker (different AI or person)
+          Use: references/checker-review-prompt-template.md
+          Include calibration test if high-risk (see trust-calibration guide (not in public pack))
          ↓
         ┌─ UNBLOCKED ─┐  ┌── BLOCKED ──┐
         ↓           ↓    ↓            ↓
@@ -89,18 +110,30 @@ Step 6: Produce     Fix findings → v(N+1)
         (refs spec
          as SSOT)
          ↓
-Step 7: Stakeholder merges + deploys + production verify
+Step 6.5: Implementation complete → run mechanical gate [Gate G4]
+          → D0/D1: SELF_CERTIFIED(evidence) with gate result
+          → D2/D3: Present to PM. STOP until PM APPROVED.
          ↓
-Step 8: Close-out report
+Step 7: Adversarial Review [Gate G5]
+        → /full-review (Mode A) or /adversarial-review (Mode B per G3)
+        → P0/P1 must be fixed. Checker unavailable = BLOCKED to PM.
+        → D2/D3: STOP until PM APPROVED.
+        → D0: SELF_CERTIFIED(evidence) if 0 P0/P1; else STOP.
+        → D1: STOP until PM APPROVED (G5 is mandatory stop for D1)
+         ↓
+Step 8: Stakeholder merges + deploys + production verify
+         ↓
+Step 9: Close-out report [Gate G6]
         Use: references/close-out-template.md
-        Must pass: Governance Audit (7 items)
+        Must pass: Governance Audit (8 items — including GA-8 Phase Compliance)
+        Must include: Phase Registry (10 Gates)
 ```
 
 > **Note**: Checker outputs a blocker list only, not a binary verdict. Final Authority declares GO when blockers = 0.
 
 ---
 
-## Hard Rules (8)
+## Hard Rules (10)
 
 Violation of any hard rule = spec is rejected, rewrite required.
 
@@ -108,23 +141,24 @@ Violation of any hard rule = spec is rejected, rewrite required.
 |---|------|-------------|-----|
 | HR-1 | Tasks involving information output OR new data fields/sources → CONTRACT triple (INPUT + OUTPUT + APPROVAL) must be delivered BEFORE logic code | 3 files/sections exist | Missing contract → interface mismatch in production |
 | HR-2 | Maker ≠ Checker — writer and reviewer must be different AI/person | Review record shows different entities | Same-context review misses systematic blind spots |
-| HR-3 | Every acceptance item must have mechanically decidable PASS/FAIL | Each ⬜ item has numeric threshold or executable command | Vague criteria ("works correctly") cannot be verified |
+| HR-3 | Every acceptance item must have mechanically decidable PASS/FAIL | Each ⬜ item has numeric threshold or executable command | Vague criteria (“works correctly”) cannot be verified |
 | HR-4 | Decision Lock Table complete before implementation | D-N table with zero TBD entries | Unlocked design choices cause implementation divergence |
 | HR-5 | Declaration ≠ Behavior — any claim must have artifact evidence | Close-out links every PASS to artifact path | Documents ≠ code reality; always verify against actual state |
-| HR-6 | Database mutation logic changes (INSERT/UPDATE/DELETE) require explicit Final Authority authorization | Authorization text in prompt or config | AI agents may autonomously "improve" mutation logic with catastrophic results |
+| HR-6 | Database mutation logic changes (INSERT/UPDATE/DELETE) require explicit Final Authority authorization | Authorization text in prompt or config | AI agents may autonomously “improve” mutation logic with catastrophic results |
 | HR-7 | Red light = full stop — test failure stops all progress | CI log or test output as evidence | Cascading failures are cheaper to prevent than to debug |
 | HR-8 | Bug-to-Gate Closure — any confirmed and replayable bug must leave behind a maintained regression gate at the narrowest effective layer. If no executable gate is feasible, close-out must record why, the temporary control, the owner, and the remediation date. | Close-out has “Regression Gate” section with gate type + layer + verification | A fixed bug without a gate is only remembered short-term, not structurally defended |
+| HR-9 | Governance Audit block (including GA-8 Phase Compliance) at end of every close-out report — mandatory, not guidance | Close-out has Governance Audit section with all 8 items | Audit found close-out can hide skipped Phases without explicit governance check |
+| HR-10 | Phase transitions require PM ACK — agent must not proceed from one Gate to the next without PM APPROVED / REVISE / REJECT | Phase Registry in close-out shows PM ACK for each Gate | Audit: Agent self-skipping Phases caused 7 rounds of PM iteration |
 
 ---
 
-## Guidance (5)
+## Guidance (4)
 
 Recommended but adjustable based on context.
 
 | # | Guidance | When | Reference |
 |---|---------|------|-----------|
 | GD-1 | Trust calibration — embed known defect to verify reviewer depth | High-risk tasks or first time with new Checker | *(not in public pack)* |
-| GD-2 | Governance Audit block at end of every close-out report | All close-out reports | references/close-out-requirements.md |
 | GD-3 | One logical change per PR | Repos with CI | Enables precise rollback per-category |
 | GD-4 | Risk escalation: permission/DB mutations/fan-in>5/routing/prior incidents | All tasks | references/risk-escalation.md |
 | GD-5 | Human manual production verification is non-negotiable | All deploys | Cannot be replaced by CI alone |

@@ -53,7 +53,7 @@ Read these before your first adversarial review. All are **real incidents where 
 - **AI Said**: "After updating cache value, next read will return the new value"
 - **Reality**: Platform uses eventually consistent caching. Edge cache with 24h TTL is NOT invalidated by store writes. Old values continue being served from other edge locations for up to 24 hours
 - **Root Cause**: AI assumed strong consistency (write → immediate read-your-writes). Platform actually has eventual consistency + independent edge cache layer
-- **Lesson**: **Platform consistency model must be verified, not assumed.** Different platforms (Cloudflare KV, Redis Cluster, DynamoDB, GAS CacheService) have different consistency guarantees
+- **Lesson**: **Platform consistency model must be verified, not assumed.** Different platforms (edge key-value store, Redis Cluster, DynamoDB, serverless script CacheService) have different consistency guarantees
 
 **What the reviewer should have done**: Checked the platform documentation for consistency model and cache invalidation behavior.
 

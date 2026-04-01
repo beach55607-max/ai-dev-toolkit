@@ -46,6 +46,8 @@ Treat the following as design-time boundaries:
 - **Rollback is mandatory for durable changes.** Any change to durable state that does not state a rollback path, fallback, or blast-radius control cannot be closed out.
 - **Cross-boundary safety requires both sides.** If a shared contract changes and only one side was validated, the task is not complete.
 - **D2/D3 require maker-checker.** If the task touches protected surfaces at cross-boundary or high-risk level, require a second-pass review or explicit user confirmation before marking as done.
+- **Phase transitions require PM ACK (with proportionality) (HR-10).** D2/D3: every Gate must stop and wait for PM APPROVED / REVISE / REJECT. D0: G0 and G6 always stop for PM; G1~G5 may use `SELF_CERTIFIED(evidence)` with mechanical evidence. D1: G0, G2(Spec Lock), G5(Review), and G6 always stop for PM; G1, G3, G4 may self-certify — PM reviews all self-certified Gates at G6. Agent uncertainty at any D-level = stop and ask PM. See Universal Gate Protocol reference.
+- **Phase skipping is a stop condition.** Skipping any Gate without `WAIVED_BY_PM(reason)` is a stop condition. The agent must issue a WAIVE REQUEST and wait for PM response. Unilateral phase skipping is never acceptable. (Related: HR-9 Governance Audit mandatory, HR-10 Phase transitions.)
 
 ## Finish Criteria
 

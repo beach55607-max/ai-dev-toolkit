@@ -516,18 +516,51 @@ See [adversarial-code-review/examples/real-world-catches.md](adversarial-code-re
 
 ```text
 skill_shared/
-├── README.md                                           <- You are here
+├── README.md                                            <- You are here
 ├── cw-brainstorming/                                    <- Brainstorming capture (NEW v2025.04.01)
 │   └── SKILL.md
-├── codex/boundary-first-multi-repo-engineering/        <- Codex edition
-│   ├── SKILL.md
-│   └── references/
-│       └── universal-gate-protocol.md                   <- UGP (NEW v2025.04.01)
+├── usp-brainstorm/                                      <- USP brainstorming (competitive positioning)
+│   └── SKILL.md
 ├── claude-code/boundary-first-multi-repo-engineering/   <- Claude Code edition
-│   ├── CLAUDE.md
-│   ├── SKILL.md
+│   ├── CLAUDE.md                                        <- For pasting into project CLAUDE.md
+│   ├── SKILL.md                                         <- For uploading as Claude Code skill
 │   └── references/
-│       └── universal-gate-protocol.md                   <- UGP (NEW v2025.04.01)
+│       ├── universal-gate-protocol.md                   <- UGP (NEW v2025.04.01)
+│       ├── constitution.md
+│       ├── decision-gate.md
+│       ├── owner-selection.md
+│       ├── cross-boundary-contracts.md
+│       ├── mechanical-verification.md
+│       ├── security-and-gates.md
+│       ├── architecture-and-observability.md
+│       ├── validation-matrix.md
+│       ├── conflict-resolution.md
+│       ├── implementation-plan-template.md
+│       ├── fallback-adapter.md
+│       └── adapters/                                    <- 5 system-type adapters
+│           ├── backend-service.md
+│           ├── frontend-app.md
+│           ├── admin-console.md
+│           ├── automation-bot.md
+│           └── browser-extension.md
+├── codex/boundary-first-multi-repo-engineering/         <- Codex edition
+│   ├── SKILL.md
+│   ├── agents/openai.yaml
+│   └── references/
+│       ├── universal-gate-protocol.md                   <- UGP (NEW v2025.04.01)
+│       ├── preflight-protocol.md
+│       ├── constitution.md
+│       ├── decision-gate.md
+│       ├── owner-selection.md
+│       ├── cross-boundary-contracts.md
+│       ├── mechanical-verification.md
+│       ├── security-and-gates.md
+│       ├── architecture-and-observability.md
+│       ├── validation-matrix.md
+│       ├── conflict-resolution.md
+│       ├── implementation-plan-template.md
+│       ├── fallback-adapter.md
+│       └── adapters/                                    <- 5 system-type adapters
 ├── executable-spec-planning/                            <- Agent-agnostic planning
 │   ├── SKILL.md
 │   └── references/

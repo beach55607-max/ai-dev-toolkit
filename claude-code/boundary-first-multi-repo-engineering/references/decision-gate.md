@@ -81,6 +81,20 @@ After classification:
 
 For D1/D2/D3 tasks, use the template in `implementation-plan-template.md` to document assumption, owner, contract/security surfaces, validation plan, and rollback stance before coding.
 
+## Mechanical Classification Aid
+
+If available, run a D0 disqualification detection script (e.g., `scripts/classify-dlevel.sh`) to mechanically detect D0 disqualification signals:
+
+```bash
+git diff [args] | bash scripts/classify-dlevel.sh
+```
+
+Output: `D0_ELIGIBLE` or `D0_DISQUALIFIED(<REASON>)`.
+
+**D0_DISQUALIFIED cannot be downgraded back to D0.** Once the script detects any disqualification signal, the Agent must not classify the change as D0. It must be escalated to D1+, with the final D-level decided by the stakeholder.
+
+The script only detects D0 disqualification, not D1/D2/D3 classification. D1+ classification still requires Agent judgment + stakeholder confirmation.
+
 ## Rules
 
 - **No source guessing.** If source files, local rules, or nearest tests were not read, do not assume implementation details. Read first, then classify.

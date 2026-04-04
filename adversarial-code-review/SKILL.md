@@ -354,12 +354,25 @@ description: "Adversarial code review skill. Use whenever reviewing code, specs,
 
 ---
 
-## §7 Execution-Layer Audit（5 層，Release Gate 或有 repo access 時使用）
+## §7 Execution-Layer Audit（6 層，Release Gate 或有 repo access 時使用）
 
 來源：derived from internal release-audit iterations — PM 升級後的 v2 Audit Prompt
 
+### Evidence 分級（引用 UGP Gate-by-Gate Evidence Matrix）
+
+| 等級 | 名稱 | 定義 | §7 對應 |
+|------|------|------|---------|
+| **E1** | 機械 / Runtime | 可重跑的指令輸出 | Layer 0, 1, 2 |
+| **E2** | 外部 AI 審查 | 獨立 AI（非 Maker）的判斷 | Layer 3（Codex/Gemini review） |
+| **E3** | 自我宣稱 | Maker 自己的敘述性判斷 | 僅 D0 低風險項目可接受 |
+
+詳見 UGP § Gate-by-Gate Evidence Matrix。
+
+### Layer 定義
+
 | Layer | 做什麼 | 方法 | 抓什麼 |
 |:-----:|--------|------|--------|
+| **0** | **Runtime Spot Check** | **執行** 至少 3 個可重跑指令（bash/curl/grep/test） | 宣稱 vs 實際不一致 |
 | 1 | Static Check | **執行** eslint / grep / 特定欄位掃描 / SQL injection scan | 語法 + 殘留引用 |
 | 2 | Behavioral Check | **執行** vitest（targeted + 全量）/ D1 `PRAGMA` | mock 層正確性 + schema 對齊 |
 | 3 | Code Review | **讀取** 變更檔案 → 逐項比對 spec | spec-code gap |

@@ -6,7 +6,7 @@
 
 ## 流程
 
-你必須**嚴格按照以下 4 個 Phase 依序執行**，不得跳過任何步驟。
+你必須**嚴格按照以下 7 個 Phase 依序執行**（1 → 2 → 2.5 → 3 → 4 → 4.5 → 5），不得跳過任何步驟。Phase 2.5/4.5 是 mandatory subphase，不是可選。
 
 ---
 
@@ -42,6 +42,33 @@ Agent(
 ```
 
 等待 subagent 回傳結果，保存為 **Claude Review Report**。
+
+---
+
+### Phase 2.5: Runtime Spot Check
+
+> Spec/文件變更也需要 E1 evidence。至少 3 個可重跑的機械驗證。
+
+在 Phase 3 之前，對變更檔案執行 runtime 驗證：
+
+1. **至少 3 個 E1 evidence**（可重跑的指令輸出），例如：
+   - `grep -c '<pattern>' <file>` 確認關鍵規則存在
+   - `wc -l <file>` 確認檔案長度合理
+   - `diff <SSOT> <copy>` 確認同步結果
+   - `npm test` / test runner 測試輸出
+   - `curl` API 呼叫結果
+
+2. **記錄格式**：
+```markdown
+## Runtime Spot Check (E1 Evidence)
+| # | Command | Expected | Actual | PASS/FAIL |
+|---|---------|----------|--------|-----------|
+| 1 | `grep -c 'closed set' ugp.md` | ≥1 | 2 | PASS |
+| 2 | `npm test` | 0 failures | 0 failures | PASS |
+| 3 | `diff ssot copy` | 0 lines | 0 lines | PASS |
+```
+
+3. **E1 不足 = BLOCKED。** 如果無法產出 3 個 E1，記錄原因並報告 PM。
 
 ---
 
@@ -118,7 +145,29 @@ codex exec -c 'approval_policy="on-failure"' -o /tmp/codex-review-output.md "你
 
 3. **詢問使用者**：是否同意修復清單？確認後開始逐項修復。
 
-4. 修復完成後，進入 Phase 5。
+4. 修復完成後，進入 Phase 4.5。
+
+---
+
+### Phase 4.5: Gemini Gate
+
+> 獨立 AI Gate 判斷 evidence 鏈是否完整。D2 建議 / D3 強制。
+
+1. **準備 Gate Input**: 將 Phase 2 Claude Report + Phase 2.5 Runtime Evidence + Phase 3 Codex Report + Phase 4 彙整報告合併為一份 review report。
+
+2. **呼叫 Gemini Gate**（如有 `scripts/gate-gemini.sh`，直接呼叫；否則手動提交 Gemini 審查）。
+
+3. **判讀結果**:
+   - `{"verdict":"PASS"}` → 繼續 Phase 5
+   - `{"verdict":"REJECT","reasons":[...]}` → 檢視 reasons，修復後重跑 Phase 4.5
+   - API 失敗 → BLOCKED → PM 決定
+
+4. **D-level 啟用規則**:
+   - **D0/D1**: Gemini Gate 不需要（跳過此 Phase，記錄「D-level 不要求」）
+   - **D2**: Gemini Gate 建議執行。未執行需 PM ACK
+   - **D3**: **Gemini Gate 強制。** 未執行 = BLOCKED，不可繼續
+
+5. 通過後進入 Phase 5。
 
 ---
 
@@ -131,7 +180,7 @@ codex exec -c 'approval_policy="on-failure"' -o /tmp/codex-review-output.md "你
 
 2. 用 Codex 快速掃描修復 diff：
 ```bash
-codex --approval-mode suggest -q "你是 regression 檢查員。以下是一批 bug 修復的 diff。
+codex exec -c 'approval_policy="on-failure"' "你是 regression 檢查員。以下是一批 bug 修復的 diff。
 只檢查這些修復本身有沒有引入新問題：
 - 改了 A 會不會壞 B？
 - 有沒有遺漏的 else branch / return path？
@@ -146,7 +195,9 @@ $(git diff)"
 
 3. 如果 Phase 5 找到新問題 → 修復 → 再跑一次 Phase 5（最多循環 2 次，防止無限迴圈）
 
-4. 最後跑測試（如有 test）確認無 regression。
+4. **Phase 5 產生新 diff 且 D2/D3 → 必須重跑 Phase 4.5 Gemini Gate。** Phase 4.5 的 PASS 只對當時的狀態背書，後續修復如果改動 substantial，Gate 需重新判斷。
+
+5. 最後跑測試（如有 test）確認無 regression。
 
 ---
 

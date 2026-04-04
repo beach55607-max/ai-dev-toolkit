@@ -334,6 +334,102 @@ D0/D1 的低風險 Gate 可以由 Agent 自行通過，但必須：
 
 ---
 
+## Reviewer Disclosure Overlay
+
+> 每個 Gate 的 reviewer 必須對其檢查範圍做誠實揭露。Disclosure 是 overlay，不改變五態，不進 Phase Registry。
+
+### Disclosure Tags（closed set）
+
+以下四個 tag 是完整且封閉的集合。**不得新增其他 disclosure tag。**
+
+| Tag | 意義 | 使用時機 |
+|-----|------|---------|
+| `CHECKED(evidence)` | 已檢查，附 evidence | reviewer 實際驗證過此項目 |
+| `NOT_CHECKED(reason)` | 未檢查，附理由 | reviewer 未能或未及檢查此項目 |
+| `UNCERTAIN(question)` | 不確定，附問題 | reviewer 檢查了但無法判斷正確性 |
+| `OUT_OF_SCOPE(reason)` | 不在此 reviewer 審查範圍 | 該項目屬於另一角色的責任 |
+
+### 規則
+
+1. **Disclosure 不進 Phase Registry。** Phase Registry 只記錄五態（PASS / SELF_CERTIFIED / BLOCKED / WAIVED_BY_PM / SKIPPED_BY_PM）。Disclosure 附在各 Gate 的 review output 中，供 stakeholder 在 G6 統一審查。
+2. **每個 Gate output 必須附 disclosure。** 沒有 disclosure = BLOCKED。
+3. **`NOT_CHECKED` 不等於 BLOCKED。** 未檢查但 stakeholder 可接受的項目，Gate 仍可 PASS。Stakeholder 在 G6 審查所有 `NOT_CHECKED` 理由。
+4. **`NOT_CHECKED` 不得用於逃避檢查。** 如果 reviewer 有能力檢查但選擇不檢查，必須說明理由。Stakeholder 有權要求補檢。
+
+---
+
+## Gate-by-Gate Evidence Matrix
+
+> 每個 Gate 在不同 D-level 下需要的最低 evidence 等級。
+
+### Evidence 等級定義
+
+| 等級 | 名稱 | 定義 | 範例 |
+|------|------|------|------|
+| **E1** | 機械 / Runtime | 可重跑的指令輸出 | script output, `npm test` output, `curl` response, `grep` count |
+| **E2** | 外部 AI 審查 | 獨立 AI（非 Maker）的判斷 | Codex review output, Gemini Gate verdict |
+| **E3** | 自我宣稱 | Maker 自己的敘述性判斷 | 「我讀了，邏輯正確」、「架構合理」 |
+
+**信度排序**: E1 > E2 > E3。高 D-level 的關鍵 Gate 不接受純 E3。
+
+### 10 Gate × 3 D-level 最低 Evidence 表
+
+| Gate | D0 最低 | D1 最低 | D2/D3 最低 |
+|------|---------|---------|-----------|
+| G-1 Discovery | E3（多選項並列即可） | E3（多選項並列即可） | E2（需雙路互博） |
+| G-2 Concept Critique | E3（checklist 自評） | E2（需 Checker 或 stakeholder 挑戰） | E2（需 Checker 獨立 critique） |
+| G-3 Canonicalize | E3（spec 文件存在） | E3（spec + Checker review） | E2（spec + Checker + stakeholder 逐項確認） |
+| G0 Classify + Preflight | E1（mechanical detection output） | E1（mechanical detection output） | E1（mechanical detection output） |
+| G1 Architecture Fit | E3（一行聲明） | E3（完整 Arch Fit Check） | E2（Arch Fit Check + Checker 確認） |
+| G2 Spec Lock | E3（spec 存在 + Decision Lock） | E2（Checker review 0 BLOCKED） | E2（Checker review 0 BLOCKED + stakeholder 逐項） |
+| G3 Review Mode | E3（宣告 Mode） | E3（宣告 Mode + stakeholder ACK） | E3（宣告 Mode A 強制） |
+| G4 Implementation | E1（gate command output） | E1（gate command output） | E1（gate command output + cross-ref check） |
+| G5 Adversarial Review | E3（self-review） | E2（independent subagent + Checker） | E2（subagent + Checker + independent Gate） |
+| G6 Close-out | E3（Phase Registry 完整） | E3（Phase Registry + stakeholder 審查 NOT_CHECKED） | E2（Phase Registry + Checker confirm + stakeholder sign-off） |
+
+**讀法**: 表格中的等級是**最低要求**。提供更高等級永遠可以。E1 滿足任何位置。
+
+---
+
+## AI 角色與 D-level 啟用矩陣
+
+> 定義三個 AI 角色的責任邊界和啟用條件。
+
+### 角色定義
+
+| 角色 | 責任 | 誰 | 核心原則 |
+|------|------|-----|---------|
+| **Maker** | 撰寫 code / spec / 文件 | 主要 AI agent（如 Claude） | 產出者，不審查自己的產出 |
+| **Checker** | 獨立審查 Maker 產出 | 獨立 AI（如 Codex / 另一個 subagent） | 獨立 context，不受 Maker 假設影響 |
+| **Gate** | 判斷 evidence 鏈是否完整 | 獨立 AI reviewer（如 Gemini） | **Gate REJECT 不是最終判決** — stakeholder 可 override |
+
+### Gate ≠ Stakeholder
+
+- Gate（獨立 AI reviewer）是 stakeholder 的**顧問**，不是 stakeholder 本身。
+- Gate REJECT = 建議 stakeholder 不要通過，但 stakeholder 可以用 `OVERRIDE(reason)` 推翻。
+- Gate PASS = 建議 stakeholder 通過，stakeholder 仍可 REVISE 或 REJECT。
+- **AI Gate 的職責是確保 evidence 完整性，不是做業務判斷。** 業務判斷永遠是 stakeholder。
+
+### D-level 啟用矩陣
+
+| D-level | Maker | Checker | Gate |
+|---------|-------|---------|------|
+| **D0** | Main AI | 不需要（self-certify） | 不需要 |
+| **D1** | Main AI | Independent AI（G2 Spec + G5 Review） | 不需要（stakeholder 直接判） |
+| **D2** | Main AI | Independent AI（每個 Gate） | Independent Gate AI（建議） |
+| **D3** | Main AI | Independent AI（每個 Gate） | **Independent Gate AI（強制）** — D3 必須有獨立 AI Gate |
+
+### Fallback 規則
+
+| 情況 | Fallback |
+|------|---------|
+| Checker AI 不可用 | BLOCKED → stakeholder 決定替代方案或 WAIVED_BY_PM |
+| Gate AI 不可用（D2 建議） | stakeholder 直接判，不需要 AI Gate |
+| Gate AI 不可用（D3 強制） | BLOCKED → stakeholder 必須找替代 AI Gate 或 WAIVED_BY_PM(reason)。不可靜默跳過 |
+| Stakeholder 不回覆 | WAITING — 真的停下來，不假裝收到 APPROVED |
+
+---
+
 ## Hard Rules
 
 | # | Rule |

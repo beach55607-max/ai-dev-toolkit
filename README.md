@@ -22,7 +22,16 @@
        └────────────────── 驗證 / Incident 發現 → 沉澱為新 gate ──────────────────────┘
 ```
 
+**v2025.04.04 新增**: 三 AI 角色分離（Maker / Checker / Gate）+ Reviewer Disclosure + Evidence Matrix + 機械強制偵測。
 **v2025.04.01 新增**: Brainstorming Capture skill（含 Discovery Gate）— 讓 AI 在動手前先把方向想清楚，stakeholder 確認後才進入工程。
+
+## 三 AI 角色分離（v2025.04.04）
+
+```text
+Maker (主 AI)  ──寫 code/spec──→  Checker (獨立 AI)  ──找 bug──→  Gate (獨立 AI)  ──稽核 evidence──→  Stakeholder
+   產出者              獨立 QA              獨立稽核            最終決策
+   不審自己             不受 Maker 假設影響     不做業務判斷          可 override Gate
+```
 
 ---
 
@@ -217,23 +226,41 @@ AI agent 根據 spec 實作。跑 gate:pr。
 ### G5: Adversarial Review（Full Review Pipeline）
 
 ```text
-Phase 2 (Claude) + Phase 3 (Codex) 並行：
+7 Phase Full Review Pipeline:
+
+Phase 1: 收集變更範圍（12 files）
+Phase 2 (Claude subagent) + Phase 3 (Codex) 並行：
 
 Claude findings:
   F-01 (🔴): 搜尋 API 沒有 rate limit，惡意使用者可以 DDoS 搜尋索引
-  F-02 (🟡): embedding API 呼叫沒有 timeout，失敗時 fallback 到純 keyword
-             但 fallback 分支沒有被測試覆蓋
+  F-02 (🟡): embedding API 呼叫沒有 timeout，fallback 分支沒有測試覆蓋
 
 Codex findings:
   F-01 (🔴): 同上 rate limit 問題（共識 = 高信度，必修）
   F-03 (🟡): 摘要 highlight 邏輯在 CJK 字元斷詞有 bug
 
-修復 F-01 + F-02 + F-03 → Phase 5 regression scan → 0 新問題
+Phase 2.5: Runtime Spot Check (E1 Evidence)
+  | # | Command              | Expected    | Actual      | PASS/FAIL |
+  |---|----------------------|-------------|-------------|-----------|
+  | 1 | npm test             | 0 failures  | 0 failures  | PASS      |
+  | 2 | curl search API      | < 2s        | 1.2s        | PASS      |
+  | 3 | grep rate_limit code | ≥1 match    | 0 matches   | FAIL → F-01 confirmed |
+
+Phase 4: 修復 F-01 + F-02 + F-03
+Phase 4.5: Gate AI review → PASS (D2 建議執行，evidence 鏈完整)
+Phase 5: regression scan → 0 新問題
 
 📋 GATE G5 Adversarial Review
 - Claude: 1 P0 (fixed), 1 P1 (fixed)
 - Codex: 1 P0 (fixed), 1 P1 (fixed)
 - Consensus: F-01 rate limit (fixed)
+- Runtime E1: 3/3 verified
+- Gate AI: PASS
+
+🏷️ Disclosure:
+- Search API: CHECKED(E1: curl + npm test)
+- Indexing pipeline: NOT_CHECKED(separate service, will verify in staging)
+
 🚦 Stakeholder: APPROVED
 ```
 
@@ -431,6 +458,10 @@ A boundary-first engineering workflow for multi-repo, multi-runtime, and contrac
 - Mechanical verification depth ladder
 - Structured close-out with mandatory rollback stance + **Phase Registry (10 Gates)** `v2025.04.01 NEW`
 - Maker-checker for D2/D3
+- **Reviewer Disclosure Overlay** — 4 tags closed set (CHECKED / NOT_CHECKED / UNCERTAIN / OUT_OF_SCOPE) `v2025.04.04 NEW`
+- **Gate-by-Gate Evidence Matrix** — 10 Gate × 3 D-level minimum evidence levels (E1 mechanical > E2 external AI > E3 self-claim) `v2025.04.04 NEW`
+- **AI Role Matrix** — Maker / Checker / Gate separation with D-level activation table `v2025.04.04 NEW`
+- **Mechanical D0 detection** — script-based D0 disqualification (cannot self-classify as D0) `v2025.04.04 NEW`
 
 ### 2. Executable Spec Planning
 
@@ -484,6 +515,9 @@ A falsification-first code and spec review skill that forces AI reviewers to pro
 - Dual checklists: 5 code-focused + 6 spec-focused (including CL-S6 Code Quality Constraints)
 - Bug-to-Gate check: review 不只確認這次修好，還確認同類錯誤下次會被 gate 擋住——這是系統記憶的形成方式
 - 13 real-world catches documented with before/after comparisons
+- **Layer 0 Runtime Spot Check** — at least 3 reproducible E1 evidence before review `v2025.04.04 NEW`
+- **Evidence grading** (E1 mechanical > E2 external AI > E3 self-claim) integrated into §7 audit `v2025.04.04 NEW`
+- **Full Review 4→7 Phase** — added Phase 2.5 Runtime Spot Check + Phase 4.5 Gate + regression re-run rule `v2025.04.04 UPDATED`
 
 ---
 
@@ -535,10 +569,16 @@ See [adversarial-code-review/README.md](adversarial-code-review/README.md) for d
 | Decision Layer     D0-D3 severity classification              |
 |                    Implementation plan template                |
 |                    Maker-checker for D2/D3                     |
-| Gate Layer         Universal Gate Protocol (10 Gates, G-1~G6)  |  NEW
-|                    Proportionality principle (D0 fast / D3 full)|  NEW
-|                    Anti-hallucination (self-certify w/ evidence)|  NEW
-|                    Phase Registry in close-out (10 Gates)       |  NEW
+| Gate Layer         Universal Gate Protocol (10 Gates, G-1~G6)  |  v04.01
+|                    Proportionality principle (D0 fast / D3 full)|  v04.01
+|                    Anti-hallucination (self-certify w/ evidence)|  v04.01
+|                    Phase Registry in close-out (10 Gates)       |  v04.01
+| Disclosure Layer   Reviewer Disclosure Overlay (4 tags closed)  |  NEW
+|                    Evidence Matrix (10 Gate × 3 D-level min)    |  NEW
+| Role Layer         Maker / Checker / Gate separation            |  NEW
+|                    D-level activation matrix                    |  NEW
+|                    Gate ≠ Stakeholder (advisor, not authority)   |  NEW
+|                    Mechanical D0 disqualification detection      |  NEW
 | Boundary Layer     Owner / consumer identification            |
 |                    Cross-boundary contract model               |
 |                    Conflict resolution                         |
@@ -588,11 +628,14 @@ See [adversarial-code-review/README.md](adversarial-code-review/README.md) for d
 | Guard Layer        7 anti-patterns (prohibited shortcuts)      |  UPDATED
 |                    Self-falsification (disprove own findings)   |
 |                    Same-pattern expansion (grep for siblings)   |
-| Gate Layer         Phase Registry audit (missing = P0)         |  NEW
-|                    BLOCKED on missing preflight (not NO-GO)    |  NEW
-|                    Full Review pipeline (dual AI review)        |  NEW
+| Gate Layer         Phase Registry audit (missing = P0)         |  v04.01
+|                    BLOCKED on missing preflight (not NO-GO)    |  v04.01
+|                    Full Review pipeline (7 Phase, dual AI)      |  UPDATED
+| Evidence Layer     Layer 0 Runtime Spot Check (≥3 E1 evidence) |  NEW
+|                    Evidence grading: E1 > E2 > E3               |  NEW
 | Trust Layer        Final Authority can embed known bugs to test reviewer   |
 |                    Honest disclosure of unverified items        |
+|                    Reviewer Disclosure tags (closed set of 4)   |  NEW
 +---------------------------------------------------------------+
 ```
 
@@ -734,7 +777,12 @@ skill_shared/
 | **GA** | Governance Audit | Close-out 的 8 項治理稽核（GA-1 ~ GA-8） |
 | **AP** | Anti-Pattern | 已知的失敗模式。目前 7 個（AP-1 ~ AP-7） |
 | **SSOT** | Single Source of Truth | 唯一真相來源。spec 和治理檔案各有指定的 SSOT |
-| **Mode A / Mode B** | 審查模式 | Mode A = 雙 AI 審查。Mode B = 單 AI 審查（需 stakeholder 授權） |
+| **Maker** | 產出者 | 寫 code/spec 的主要 AI。不審自己的產出 |
+| **Checker** | 審查者 | 獨立審查 Maker 產出的 AI（獨立 context，不受 Maker 假設影響） |
+| **Gate** | 稽核者 | 判斷 evidence 鏈是否完整的獨立 AI。Gate ≠ stakeholder，stakeholder 可 override |
+| **Disclosure** | 審查揭露 | 每個 Gate reviewer 必須附的誠實揭露 tag（4 tags closed set） |
+| **E1 / E2 / E3** | Evidence 等級 | E1 機械（可重跑指令）> E2 外部 AI 審查 > E3 自我宣稱。高風險 Gate 不接受純 E3 |
+| **Mode A / Mode B** | 審查模式 | Mode A = Maker + Checker + Gate 三角色。Mode B = Maker 單審（需 stakeholder 授權） |
 | **Evidence Block** | 證據區塊 | Spec 必附：讀了什麼 code、查了什麼真實資料、每個數字的出處 |
 | **CONTRACT triple** | 合約三件組 | INPUT CONTRACT + OUTPUT CONTRACT + APPROVAL CHECKLIST |
 | **BDD AC** | Given-When-Then 驗收標準 | 含具體欄位值和數值的可機械驗證驗收條件 |
@@ -743,6 +791,22 @@ skill_shared/
 ---
 
 ## Version History
+
+### v2025.04.04 — 三角色分離 + 機械強制 + 誠實揭露
+
+基於治理升級 spec v3.1（經 4 輪 Checker review），解決三個核心問題：球員兼裁判（同一 AI 寫又審）、靜默跳過（reviewer 沒檢查也不說）、自我宣稱混過（「我看了沒問題」就算 evidence）。
+
+**新增 Protocol:**
+- **Reviewer Disclosure Overlay** — 4 tags closed set（CHECKED / NOT_CHECKED / UNCERTAIN / OUT_OF_SCOPE），reviewer 必須對檢查範圍做誠實揭露。不進 Phase Registry，供 stakeholder 在 G6 統一審查
+- **Gate-by-Gate Evidence Matrix** — 10 Gate × 3 D-level 最低 evidence 等級（E1 機械 > E2 外部 AI > E3 自我宣稱），高風險 Gate 不接受純 E3
+- **AI Role Matrix** — Maker / Checker / Gate 三角色分離 + D-level 啟用矩陣。Gate ≠ stakeholder（advisor, not authority）。D3 強制獨立 AI Gate
+- **Mechanical D0 Detection** — script 機械偵測 D0 失格信號（FILES / SQL / SECURITY / NEW_DATA / INFO_OUTPUT / CROSS_MODULE），Agent 不可自行說「我覺得是 D0」
+
+**修改:**
+- Adversarial Code Review §7: 5 層 → 6 層（加 Layer 0 Runtime Spot Check + Evidence 分級引用）
+- Full Review Pipeline: 4 Phase → 7 Phase（加 Phase 2.5 Runtime Spot Check + Phase 4.5 Gate + regression re-run rule）
+- Full Review Codex CLI 格式修正（`codex exec -c 'approval_policy="on-failure"'`）
+- Decision Gate: 加 Mechanical Classification Aid + D0_DISQUALIFIED 不可降回規則
 
 ### v2025.04.01 — Universal Gate Protocol + Brainstorming Capture
 

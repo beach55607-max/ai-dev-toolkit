@@ -2,9 +2,21 @@
 
 給 AI coding agent 用的工程治理 skill（Claude Code、Codex、ChatGPT 皆適用）。
 
+## 三行安裝
+
+```bash
+git clone https://github.com/beach55607-max/skill_shared && cd skill_shared
+bash install.sh --target /path/to/your/project        # Claude Code
+bash install.sh --codex --target /path/to/your/project # Codex
+```
+
+支援選裝（`--skill 1 3`）、移除（`--uninstall`）、列表（`--list`）。詳見下方 [Quick Start](#quick-start)。
+
+---
+
 核心哲學：**修 bug 不算完成，必須留下下次能擋住同類錯誤的 gate。** 每一次錯誤都應該沉澱成新的防線，讓系統越做越強。
 
-四套 skill 覆蓋 AI 輔助開發的完整生命週期——從發想到交付，每一步都有 stakeholder checkpoint，形成閉環：
+五套 skill 覆蓋 AI 輔助開發的完整生命週期——從發想到交付，每一步都有 stakeholder checkpoint，形成閉環：
 
 ```text
   發想            →     決定            →        規劃          →       施工         →       驗證

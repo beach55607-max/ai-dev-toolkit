@@ -141,11 +141,10 @@ Agent(
 )
 ```
 
-#### 路線 B — Codex CLI
+#### 路線 B — Codex Plugin
 
-```bash
-# 語法可能因版本而異，執行前先 codex exec --help 確認
-codex exec "[同上 prompt，依任務類型選擇]"
+```text
+/codex:rescue --wait [同上 prompt，依任務類型選擇]
 ```
 
 ### 彙整
@@ -220,12 +219,10 @@ Agent(
 )
 ```
 
-#### 路線 B — Codex CLI
+#### 路線 B — Codex Plugin
 
-```bash
-# 語法可能因版本而異，執行前先 codex exec --help 確認
-codex exec "你是獨立事實查核員。對以下候選逐條驗證：
-[同上 prompt，含候選清單]"
+```text
+/codex:rescue --wait 你是獨立事實查核員。對以下候選逐條驗證：[同上 prompt，含候選清單]
 ```
 
 #### 路線 C — Gemini Web Search
@@ -316,12 +313,10 @@ Agent(
 )
 ```
 
-#### 路線 B — Codex CLI
+#### 路線 B — Codex Plugin
 
-```bash
-# 語法可能因版本而異，執行前先 codex exec --help 確認
-codex exec "你是競品的行銷主管 + 消保官。找出以下候選的每一個可攻擊點。
-[同上 prompt，含候選清單 + 證據鏈]"
+```text
+/codex:rescue --wait 你是競品的行銷主管 + 消保官。找出以下候選的每一個可攻擊點。[同上 prompt，含候選清單 + 證據鏈]
 ```
 
 ### 彙整與判定

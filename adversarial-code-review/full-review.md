@@ -52,10 +52,11 @@ Agent(
 在 Phase 3 之前，對變更檔案執行 runtime 驗證：
 
 1. **至少 3 個 E1 evidence**（可重跑的指令輸出），例如：
+   - `bash scripts/classify-dlevel.sh` 對已知 case 的輸出
    - `grep -c '<pattern>' <file>` 確認關鍵規則存在
    - `wc -l <file>` 確認檔案長度合理
    - `diff <SSOT> <copy>` 確認同步結果
-   - `npm test` / test runner 測試輸出
+   - `npm test` / `npx vitest run` 測試輸出
    - `curl` API 呼叫結果
 
 2. **記錄格式**：
@@ -63,8 +64,8 @@ Agent(
 ## Runtime Spot Check (E1 Evidence)
 | # | Command | Expected | Actual | PASS/FAIL |
 |---|---------|----------|--------|-----------|
-| 1 | `grep -c 'closed set' ugp.md` | ≥1 | 2 | PASS |
-| 2 | `npm test` | 0 failures | 0 failures | PASS |
+| 1 | `bash scripts/classify-dlevel.sh < test.diff` | D0_DISQUALIFIED | D0_DISQUALIFIED(SQL_MUTATION) | PASS |
+| 2 | `grep -c 'closed set' ugp.md` | ≥1 | 2 | PASS |
 | 3 | `diff ssot copy` | 0 lines | 0 lines | PASS |
 ```
 
@@ -74,22 +75,20 @@ Agent(
 
 ### Phase 3: Codex 獨立審查
 
-用 Bash 呼叫 Codex CLI 對同一批檔案做獨立審查。
+使用官方 Codex plugin（`codex@openai-codex`）對同一批檔案做獨立審查。
 
 執行指令：
-```bash
-codex exec -c 'approval_policy="on-failure"' -o /tmp/codex-review-output.md "你是獨立的 code reviewer。
-請讀取 .claude/skills/adversarial-code-review/SKILL.md 取得完整審查流程。
-依照 §0-§8 執行，與 Phase 2 Claude 審查等強度。
 
-請對以下檔案執行：
-1. 對抗性審查：找出潛在 bug、邏輯漏洞、邊界條件遺漏
-2. 程式碼品質審查：可讀性、效能、安全性、錯誤處理
-3. 每個 finding 標記嚴重度（P0 critical / P1 major / P2 minor）
-4. 附上具體檔案路徑和行號
-5. Reviewer 誠實揭露（沒驗證的部分）
+```text
+/codex:adversarial-review --base main --wait
+```
 
-審查檔案：[變更檔案清單]"
+> **說明**：`/codex:adversarial-review` 會自動讀取 git diff，對變更執行對抗性審查（質疑設計決策、找邏輯漏洞、邊界條件）。`--wait` 同步等待結果。
+
+如需指定審查重點，可在指令後加描述：
+
+```text
+/codex:adversarial-review --base main --wait 重點檢查 HMAC 驗證邏輯和 error handling
 ```
 
 保存結果為 **Codex Review Report**。
@@ -155,12 +154,17 @@ codex exec -c 'approval_policy="on-failure"' -o /tmp/codex-review-output.md "你
 
 1. **準備 Gate Input**: 將 Phase 2 Claude Report + Phase 2.5 Runtime Evidence + Phase 3 Codex Report + Phase 4 彙整報告合併為一份 review report。
 
-2. **呼叫 Gemini Gate**（如有 `scripts/gate-gemini.sh`，直接呼叫；否則手動提交 Gemini 審查）。
+2. **呼叫 Gemini Gate**:
+```bash
+cat <<'EOF' | bash scripts/gate-gemini.sh
+[合併後的 review report]
+EOF
+```
 
 3. **判讀結果**:
    - `{"verdict":"PASS"}` → 繼續 Phase 5
    - `{"verdict":"REJECT","reasons":[...]}` → 檢視 reasons，修復後重跑 Phase 4.5
-   - API 失敗 → BLOCKED → PM 決定
+   - exit code 2（API 失敗）→ BLOCKED → PM 決定
 
 4. **D-level 啟用規則**:
    - **D0/D1**: Gemini Gate 不需要（跳過此 Phase，記錄「D-level 不要求」）
@@ -178,26 +182,19 @@ codex exec -c 'approval_policy="on-failure"' -o /tmp/codex-review-output.md "你
 
 1. 執行 `git diff` 取得 **Phase 4 修復產生的 diff**（不是原始變更，是修復的改動）
 
-2. 用 Codex 快速掃描修復 diff：
-```bash
-codex exec -c 'approval_policy="on-failure"' "你是 regression 檢查員。以下是一批 bug 修復的 diff。
-只檢查這些修復本身有沒有引入新問題：
-- 改了 A 會不會壞 B？
-- 有沒有遺漏的 else branch / return path？
-- null/undefined 處理是否完整？
-- 原本正常的呼叫者會不會因為這次改動收到不同的回傳值？
+2. 用 Codex plugin 快速掃描修復 diff：
 
-只回報修復引入的問題，不要重複之前已知的 findings。
-
-修復 Diff：
-$(git diff)"
+```text
+/codex:review --wait
 ```
+
+> **說明**：`/codex:review` 自動抓取當前 diff，做 read-only 回歸掃描。此處用標準 review（非 adversarial），因為目的是抓修復引入的 regression，不需要質疑設計。
 
 3. 如果 Phase 5 找到新問題 → 修復 → 再跑一次 Phase 5（最多循環 2 次，防止無限迴圈）
 
 4. **Phase 5 產生新 diff 且 D2/D3 → 必須重跑 Phase 4.5 Gemini Gate。** Phase 4.5 的 PASS 只對當時的狀態背書，後續修復如果改動 substantial，Gate 需重新判斷。
 
-5. 最後跑測試（如有 test）確認無 regression。
+5. 最後跑 `npx vitest run`（如有 test）確認無 regression。
 
 ---
 

@@ -523,31 +523,42 @@ A falsification-first code and spec review skill that forces AI reviewers to pro
 
 ## Quick Start
 
-### Brainstorming Capture `NEW`
+### 一鍵安裝（推薦）
 
-**Claude Code:** Copy `cw-brainstorming/` to `.claude/skills/cw-brainstorming/`.
+```bash
+# Clone
+git clone https://github.com/beach55607-max/skill_shared
+cd skill_shared
 
-**Codex / ChatGPT / any LLM:** Paste `SKILL.md` content at the start of your brainstorming conversation.
+# 安裝全部到你的專案（Claude Code）
+bash install.sh --target /path/to/your/project
 
-### Boundary-First Engineering
+# 安裝全部（Codex）
+bash install.sh --codex --target /path/to/your/project
 
-**Claude Code (skill 方式):** Copy `claude-code/boundary-first-multi-repo-engineering/` to `.claude/skills/boundary-first-multi-repo-engineering/`. 包內提供 `SKILL.md`（有 frontmatter）供上傳使用。
+# 只裝你要的
+bash install.sh --skill 1 3 --target /path/to/your/project  # Boundary-First + Adversarial Review
 
-**Claude Code (CLAUDE.md 方式):** 把 `CLAUDE.md` 的內容貼進專案根目錄的 `CLAUDE.md`，並把 `references/` 複製到同層。
+# 看有哪些可裝
+bash install.sh --list
 
-**Codex:** Copy `codex/.../` to `~/.codex/skills/boundary-first-multi-repo-engineering/`, restart Codex.
+# 移除
+bash install.sh --uninstall --target /path/to/your/project
+```
 
-### Executable Spec Planning
+### 手動安裝
 
-**Claude Code:** Copy `executable-spec-planning/` to `.claude/skills/executable-spec-planning/`, or paste `SKILL.md` content into your project's `CLAUDE.md`.
+如果不想用腳本，手動 copy 也可以：
 
-**Codex:** Copy `executable-spec-planning/` to `~/.codex/skills/executable-spec-planning/`, restart Codex.
+| Skill | Claude Code | Codex |
+|-------|------------|-------|
+| 0: Brainstorming | `cp -r cw-brainstorming/ .claude/skills/` | `cp -r cw-brainstorming/ .codex/skills/` |
+| 1: Boundary-First | `cp -r claude-code/boundary-first-multi-repo-engineering/ .claude/skills/` | `cp -r codex/boundary-first-multi-repo-engineering/ .codex/skills/` |
+| 2: Spec Planning | `cp -r executable-spec-planning/ .claude/skills/` | `cp -r executable-spec-planning/ .codex/skills/` |
+| 3: Adversarial Review | `cp -r adversarial-code-review/ .claude/skills/` | `cp -r adversarial-code-review/ .codex/skills/` |
+| 4: USP Brainstorm | `cp -r usp-brainstorm/ .claude/skills/` | `cp -r usp-brainstorm/ .codex/skills/` |
 
-### Adversarial Code Review
-
-**Claude Code:** Copy `adversarial-code-review/` to `.claude/skills/adversarial-code-review/`.
-
-**Codex / ChatGPT / any LLM:** Paste `SKILL.md` content at the start of your review conversation.
+**ChatGPT / 其他 LLM:** 把對應 `SKILL.md` 的內容貼進對話開頭即可。
 
 See [adversarial-code-review/README.md](adversarial-code-review/README.md) for detailed usage guide and examples.
 

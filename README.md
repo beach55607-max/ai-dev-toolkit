@@ -821,6 +821,28 @@ ai-dev-toolkit/
 
 ## Version History
 
+### v2025.04.05 — 生成式驗證升級 + I1/I2/I3 rename
+
+解決核心問題：「審核只會審有的東西，審不到沒有的東西」。Maker 自評 structural checklist 24/24 PASS，但 Codex 獨立 review 找到 6 個 BLOCKER — 根因是驗證式打勾讓 Maker 傾向「我寫了所以 PASS」。
+
+**新增 Guard:**
+- **Structural Completeness Checklist v2** — 12 項高致死率 check 從驗證式改為**生成式**（auth actors、error scenarios、multi-store consistency、test coverage 等）。Maker 不能只打勾，必須從 spec 產出具體內容。產不出來 = FAIL。禁止「see spec §X」指向式回答
+- **Version Alignment Rule** — spec 修改後 structural evidence 必須重填，版本不一致 = BLOCKER
+
+**新增 Protocol:**
+- **Checker Structural Review** — Codex 同時審 spec + Maker 的生成式答案（4 項標準：Completeness / Specificity / Consistency / Missing domains + 版本對齊檢查）
+- **Adversarial Review §0A Structural Benchmark** — code review 拿 structural 的 12 項生成式答案當 benchmark，Maker 宣稱但 code 未實作 = P0「spec-code gap」
+- **I1/I2/I3 Generative Verification** — 發想階段 Gate 加生成式驗證（I1: 探索廣度/核心定義/替代方案差異、I2: 反面論點+反駁、I3: 核心閉環追溯/資料來源完整性/Scope 邊界測試）
+- **Governance Audit v2** — close-out GA-1~GA-8 從打勾改為生成式（列出 AC 門檻、驗證指令+結果、回滾步驟、kill switch 機制等）
+
+**命名變更:**
+- G-1 → **I1** (Ideation), G-2 → **I2**, G-3 → **I3** — 發想階段與工程階段用不同字母前綴，避免 G-1/G0/G1 混淆
+
+**閉環修補:**
+- BLOCKED loop 版本同步（structural evidence 版本 ≥ spec 版本）
+- Structural → Adversarial Review 銜接（spec-code gap 交叉驗證）
+- Close-out Traceability Matrix 加 Structural 行（D1+ 需列 12 項生成式最終判定）
+
 ### v2025.04.04 — 三角色分離 + 機械強制 + 誠實揭露
 
 基於治理升級 spec v3.1（經 4 輪 Checker review），解決三個核心問題：球員兼裁判（同一 AI 寫又審）、靜默跳過（reviewer 沒檢查也不說）、自我宣稱混過（「我看了沒問題」就算 evidence）。
